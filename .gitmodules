@@ -1,0 +1,6 @@
+[submodule "extern/unity"]
+	path = extern/unity
+	url = https://github.com/ThrowTheSwitch/Unity.git
+[submodule "extern/csp"]
+	path = extern/csp
+	url = https://github.com/spaceinventor/libcsp
