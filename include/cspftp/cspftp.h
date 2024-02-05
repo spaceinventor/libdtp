@@ -6,6 +6,9 @@
 extern "C"
 {
 #endif
+/**
+ * CSP FTP Public Interface.
+ */
 
     /** Opaque handle to a CSPFTP sesssion */
     typedef struct cspftp_t cspftp_t;
@@ -13,11 +16,12 @@ extern "C"
     /** Returned by most of CSPFTP API calls*/
     typedef enum
     {
-        CSPFTP_OK //<! Chill, all good
+        CSPFTP_OK, //<! Chill, all good
+        CSPFTP_ERR //<! Hmm, check errno...
     } cspftp_result;
 
     /**
-     * Represent the error code for the most recent CSPFTP operation when this situation
+     * Represent the error code for the most recent CSPFTP operation when the error situation
      * cannot be the return value of an API call (because async for example)
      */
     typedef enum
@@ -34,30 +38,173 @@ extern "C"
         DONE
     } cspftp_state;
 
+    /** The options pertaining to a CSPFTP session */
+    typedef enum {
+        CSPFTP_OPT_1 = 1 << 0,
+        CSPFTP_OPT_2 = 1 << 1,
+        CSPFTP_OPT_3 = 1 << 2,
+        CSPFTP_OPT_4 = 1 << 3,
+    } cspftp_option;
+
     /**
-     *
+     * gettable/settable parameters for option 1
+     */
+    typedef struct {
+    } cspftp_opt_1;
+
+    /**
+     * gettable/settable parameters for option 2
+     */
+    typedef struct {
+    } cspftp_opt_2;
+
+    /**
+     * gettable/settable parameters for option 3
+     */
+    typedef struct {
+    } cspftp_opt_3;
+
+    /**
+     * gettable/settable parameters for option 4
+     */
+    typedef struct {
+    } cspftp_opt_4;
+
+
+    /**
+     * All gettable/settable parameter types for a session
+     */
+    typedef union {
+        cspftp_opt_1 opt_1;
+        cspftp_opt_2 opt_2;
+        cspftp_opt_3 opt_3;
+        cspftp_opt_4 opt_4;
+    } cspftp_params;
+
+/*
+#pragma region Public API
+*/
+
+    /**
+     * Try to get a handle of one of the pre-allocated sessions
+     * @return valid pointer to session object or NULL in case of failure, see csftp_errno()
+     */
+    cspftp_t *cspftp_acquire_session();
+
+    /**
+     * Release a previously acquired handle on one of the pre-allocated sessions
+     * 
+     * @param[in] pointer to a session object previously obtained using cspftp_acquire_session()
+     * 
+     * @return CSPFTP_OK if release ok, else valid pointer to session object or NULL in case of failure, see 
+     */
+    cspftp_result cspftp_release_session(cspftp_t *session);
+
+    /**
+     * Dynamically create meta-data associated with a data transfer session
+     * 
+     * @param[out] pointer to a session object pointer, will be set in case of success
+     * 
+     * @return valid pointer to session object or NULL in case of failure, see csftp_errno()
      */
     cspftp_result cspftp_new_session(cspftp_t **session);
 
     /**
-     *
+     * Release meta-data associated with a data transfer session
+     * 
+     * @param[in] session pointer to a valid cspftp session object
+     * 
+     * @return CSPFTP_OK
      */
     cspftp_result cspftp_free_session(cspftp_t *session);
 
     /**
+     * Serialize a CSPFTP session using the given "writing" interface
+     * 
+     * A serialized CSPFTP session can be read back as a valid session using the counterpart cspftp_serialize_session() function.
+     * 
+     * @param[in] pointer to a fwrite-like function that will be called to write serialized session data
+     * @param[in] pointer to a valid session object
+     * 
+     * @return CSPFTP_OK in serialization completed, else CSPFTP_ERR, see csftp_errno()
      *
      */
-    cspftp_result cspftp_config(cspftp_t *session, const void *const data, uint32_t len);
+    cspftp_result cspftp_serialize_session(cspftp_t *session, uint32_t (*write)(void *data, uint32_t length));
 
     /**
+     * Deserialize a CSPFTP session using the given "reading" interface
+     * 
+     * @param[in] pointer to a fread-like function that will be called to read serialized session data
+     * @param[inout] pointer to a valid session object (aka one that was obtained using cspftp_acquire_session() or cspftp_new_session())
+     * 
+     * @return CSPFTP_OK in serialization completed, else CSPFTP_ERR, see csftp_errno(). If sucessful, the object will contained data as it was when the session was serialized.
      *
+     */
+    cspftp_result cspftp_deserialize_session(cspftp_t *session, uint32_t (*read)(void *data, uint32_t length));
+
+    /**
+     * Get the errno value for the given session
+     * @param[in] session pointer to a valid cspftp session object
+     * 
+     * @return errno value of the last operation on the given session
      */
     cspftp_errno_t cspftp_errno(cspftp_t *session);
 
     /**
-     *
+     * @return printable string describing the error represented by the given cspftp_errno value
      */
     const char* cspftp_strerror(cspftp_errno_t err);
+
+    /**
+     * Set a session option.
+     * 
+     * @param[in] session pointer to a valid cspftp session object
+     * 
+     * @return CSPFTP_OK
+     */
+    cspftp_result cspftp_set_opt(cspftp_t *session, cspftp_option option, cspftp_params *param);
+
+    /**
+     * Get a session option.
+
+     * @param[in] session pointer to a valid cspftp session object
+
+     * @return CSPFTP_OK
+     */
+    cspftp_result cspftp_get_opt(cspftp_t *session, cspftp_option option, cspftp_params *param);
+
+    /**
+     * Start (or resume) a CSP FTP session
+     * 
+     * @param[in] session pointer to a valid cspftp session object
+
+     * @note a succesfully started CSP FTP transfer can be interrupted at any point, see cspftp_stop_transfer()
+     * 
+     * @return CSPFTP_OK if session was started sucessfully, or CSPFTP_ERR in case of failure, see csftp_errno()
+     */
+    cspftp_result cspftp_start_transfer(cspftp_t *session);
+
+    /**
+     * Interrupt a CSP FTP session.
+     * 
+     * @param[in] session pointer to a valid cspftp session object
+
+     * @note a succesfully interrupted CSP FTP transfer can be resumed later, see cspftp_start_transfer()
+     * 
+     * @return CSPFTP_OK if session was stopped sucessfully, or CSPFTP_ERR in case of failure, see csftp_errno()
+     */
+    cspftp_result cspftp_stop_transfer(cspftp_t *session);
+
+/*
+#pragma endregion
+ */
+
+/*
+#pragma region Simplified Public API - TBD
+ */
+/*
+#pragma endregion
+ */
 
 #ifdef __cplusplus
 }
