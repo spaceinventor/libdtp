@@ -1,7 +1,7 @@
 Introduction
 ============
 
-CSP FTP is the implementation of an interruptible, reusumable, resilient data transfer protocol.
+CSP FTP is the implementation of an interruptible, resumable, resilient data transfer protocol over CSP designed to utilize the available bandwith optimally.
 
 Features
 --------
