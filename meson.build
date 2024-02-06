@@ -14,9 +14,13 @@ utests_src = ['tests/test_1.c', 'tests/unity_test_utils.c']
 utests = executable('utests', utests_src, link_with:[cspftp_lib], include_directories: [include], dependencies: [unity_dep])
 test('utests', utests)
 
-doc_out = meson.current_build_dir() / '@OUTPUT@'
-doc = custom_target('doc',
-  output : 'CSP_FTP.pdf',
-  input : 'doc/cspftp.rst',
-  command : ['gen-sidoc', '-t', 'MAN', 'CSP_FTP', '@INPUT@', '-o', doc_out]
-)
+gen_doc = find_program('gen-sidoc', required: false)
+
+if gen_doc.found()
+  doc_out = meson.current_build_dir() / '@OUTPUT@'
+  doc = custom_target('doc',
+    output : 'CSP_FTP.pdf',
+    input : 'doc/cspftp.rst',
+    command : ['gen-sidoc', '-t', 'MAN', 'CSP_FTP', '@INPUT@', '-o', doc_out]
+  )
+endif
