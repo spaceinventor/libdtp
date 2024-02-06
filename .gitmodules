@@ -4,3 +4,6 @@
 [submodule "extern/csp"]
 	path = extern/csp
 	url = https://github.com/spaceinventor/libcsp
+[submodule "extern/libparam"]
+	path = extern/param
+	url = git@github.com:spaceinventor/libparam.git
