@@ -3,7 +3,7 @@
 	url = https://github.com/ThrowTheSwitch/Unity.git
 [submodule "extern/csp"]
 	path = extern/csp
-	url = https://github.com/spaceinventor/libcsp
+	url = https://github.com/spaceinventor/libcsp.git
 [submodule "extern/libparam"]
 	path = extern/param
-	url = git@github.com:spaceinventor/libparam.git
+	url = https://github.com/spaceinventor/libparam.git
