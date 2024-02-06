@@ -68,11 +68,21 @@ cspftp_result cspftp_stop_transfer(cspftp_t *session)
     return CSPFTP_OK;
 }
 
-cspftp_result cspftp_serialize_session(cspftp_t *session, uint32_t (*write)(void *data, uint32_t length))
+cspftp_result cspftp_set_source(cspftp_t *session, vmem_t *src)
 {
     return CSPFTP_OK;
 }
 
-cspftp_result cspftp_deserialize_session(cspftp_t *session, uint32_t (*read)(void *data, uint32_t length)) {
+cspftp_result cspftp_set_destination(cspftp_t *session, vmem_t *dest)
+{
+    return CSPFTP_OK;
+}
+
+cspftp_result cspftp_serialize_session(cspftp_t *session, vmem_t *dest)
+{
+    return CSPFTP_OK;
+}
+
+cspftp_result cspftp_deserialize_session(cspftp_t *session, vmem_t *src) {
     return CSPFTP_OK;
 }
