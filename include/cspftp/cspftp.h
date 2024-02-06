@@ -28,6 +28,9 @@ extern "C"
     typedef enum
     {
         CSPFTP_NO_ERR, //<! Chill, all good
+        CSPFTP_EINVAL, //<! Invalid argument
+        CSPFTP_ENOMORE_SESSIONS, //<! All static sessions in use
+        CSPFTP_ESESSION_NOT_FOUND, //<! Given session not found
         CSPFTP_LAST_ERR
     } cspftp_errno_t;
 
