@@ -14,16 +14,14 @@ void tearDown(void) {
 }
 
 REGISTER_TEST(test_create_destroy) {
-    cspftp_t *session;
-    cspftp_result res = cspftp_new_session(&session);
-    TEST_ASSERT(res == CSPFTP_OK);
+    cspftp_t *session = cspftp_acquire_session();
+    TEST_ASSERT(0 != session);
 }
 
 REGISTER_TEST(test_serialize_session) {
-    cspftp_t *session;
-    cspftp_result res = cspftp_new_session(&session);
-    TEST_ASSERT(res == CSPFTP_OK);
-    res = cspftp_serialize_session(session, &vmem_session_serialize_test);
+    cspftp_t *session = cspftp_acquire_session();
+    TEST_ASSERT(0 != session);
+    cspftp_result res = cspftp_serialize_session(session, &vmem_session_serialize_test);
     TEST_ASSERT(res == CSPFTP_OK);
 }
 
