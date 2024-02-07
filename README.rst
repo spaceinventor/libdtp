@@ -27,6 +27,52 @@ server         Module serving data upon request
 client         Module requesting data and handling status
 =============  ====
 
+Client-server protocol
+----------------------
+
+.. aafigure::  :name: Protocol Overview
+  :scale: 2
+
+ +---------+     +---------+
+ |Client   |     |Server   |
+ +----+----+     +----+----+
+      |               |
+      |               |
+      |  transfer req |
+      |-------------->|
+      |      resp     |
+      |<--------------|
+      |               |
+      .               .
+      .               .
+      .               .
+      |  datagram 1   |
+      |<--------------|
+      |  datagram 2   |
+      |<--------------|
+      |               |
+      .               .
+      .               .
+      .               .
+      | datagram "n-1"|
+      |<--------------|
+      |  datagram n   |
+      |X--------------|
+      |datagram "n+1" |
+      |X--------------|
+      |datagram "n+2" |
+      |X--------------|
+      .               .
+      .               .
+      .               .
+      |               |
+      |<--------------|
+      |               |---+
+      |               |   |
+      |               |<--+
+
+
+
 Using CSP FTP
 =============
 
