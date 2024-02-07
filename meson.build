@@ -35,7 +35,7 @@ if gen_doc.found()
   doc_out = meson.current_build_dir() / '@OUTPUT@'
   doc = custom_target('doc',
     output : 'CSP_FTP.pdf',
-    input : 'doc/cspftp.rst',
-    command : ['gen-sidoc', '-t', 'MAN', 'CSP_FTP', '@INPUT@', '-o', doc_out]
+    input : ['doc/cspftp.rst', 'README.md'],
+    command : ['gen-sidoc', '-t', 'MAN', 'CSP_FTP', '@INPUT0@', '-o', doc_out]
   )
 endif
