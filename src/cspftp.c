@@ -77,16 +77,6 @@ cspftp_result cspftp_release_session(cspftp_t *session)
     return CSPFTP_ERR;
 }
 
-cspftp_result cspftp_new_session(cspftp_t **cspftp_t)
-{
-    return CSPFTP_OK;
-}
-
-cspftp_result cspftp_free_session(cspftp_t *session)
-{
-    return CSPFTP_OK;
-}
-
 cspftp_result cspftp_set_opt(cspftp_t *session, cspftp_option option, cspftp_params *param)
 {
     switch(option) {

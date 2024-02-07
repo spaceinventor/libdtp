@@ -101,27 +101,9 @@ extern "C"
      * 
      * @param[in] pointer to a session object previously obtained using cspftp_acquire_session()
      * 
-     * @return CSPFTP_OK if release ok, else valid pointer to session object or NULL in case of failure, see 
+     * @return CSPFTP_OK if release ok, see csftp_errno()
      */
     cspftp_result cspftp_release_session(cspftp_t *session);
-
-    /**
-     * Dynamically create meta-data associated with a data transfer session
-     * 
-     * @param[out] pointer to a session object pointer, will be set in case of success
-     * 
-     * @return valid pointer to session object or NULL in case of failure, see csftp_errno()
-     */
-    cspftp_result cspftp_new_session(cspftp_t **session);
-
-    /**
-     * Release meta-data associated with a data transfer session
-     * 
-     * @param[in] session pointer to a valid cspftp session object
-     * 
-     * @return CSPFTP_OK
-     */
-    cspftp_result cspftp_free_session(cspftp_t *session);
 
     /**
      * Serialize a CSPFTP session using the given destination VMEM object
