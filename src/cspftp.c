@@ -8,9 +8,14 @@ typedef struct cspftp_t
 
 
 static cspftp_errno_t last_error = CSPFTP_NO_ERR;
+static cspftp_t static_sessions[10] = {};
+static uint8_t session_count = 0;
+static const uint8_t MAX_NOF_STATIC_SESSIONS = sizeof(static_sessions)/sizeof(static_sessions[0]);
 
 static const char *const _error_strs[] = {
-    "No error",
+    "No error", /* CSPFTP_NO_ERR */
+    "No more available static sessions", /* CSPFTP_OUT_OF_STATIC_SESSIONS */
+    "Not implemented", /* CSPFTP_NOT_IMPLEMENTED */
 };
 
 static_assert(CSPFTP_LAST_ERR <= sizeof(_error_strs) / sizeof(_error_strs[0]), "_error_strs does not have entries for all error codes");
@@ -30,12 +35,20 @@ const char *cspftp_strerror(cspftp_errno_t err)
 
 cspftp_t *cspftp_acquire_session()
 {
-    return 0;
+    cspftp_t *result = 0;
+    if(session_count < MAX_NOF_STATIC_SESSIONS) {
+        result = &static_sessions[session_count++];
+        last_error = CSPFTP_NO_ERR;
+    } else  {
+        last_error = CSPFTP_OUT_OF_STATIC_SESSIONS;
+    }
+    return result;
 }
 
 cspftp_result cspftp_release_session(cspftp_t *session)
 {
-    return CSPFTP_OK;
+    last_error = CSPFTP_NOT_IMPLEMENTED;
+    return CSPFTP_ERR;
 }
 
 cspftp_result cspftp_new_session(cspftp_t **cspftp_t)

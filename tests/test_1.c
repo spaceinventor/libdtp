@@ -17,8 +17,10 @@ REGISTER_TEST(test_one) {
     TEST_ASSERT(res == CSPFTP_OK);
 }
 
-int main(void) {
-    UNITY_BEGIN();
-    RUN_TEST(test_one);
-    return UNITY_END();
+REGISTER_TEST(test_two) {
+    TEST_ASSERT(1);
+}
+
+int main(int argc, const char *argv[]) {
+    return UNITY_UTIL_MAIN();
 }

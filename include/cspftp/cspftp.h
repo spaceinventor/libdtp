@@ -27,7 +27,9 @@ extern "C"
     typedef enum
     {
         CSPFTP_NO_ERR, //<! Chill, all good
-        CSPFTP_LAST_ERR
+        CSPFTP_OUT_OF_STATIC_SESSIONS,
+        CSPFTP_NOT_IMPLEMENTED, //<! Still under construction, sorry
+        CSPFTP_LAST_ERR //<! End of the line marker
     } cspftp_errno_t;
 
     /** The current state of a CSPFTP transaction */
@@ -116,7 +118,7 @@ extern "C"
      * 
      * @return CSPFTP_OK
      */
-    cspftp_result cspftp_free_session(cspftp_t *session);
+    cspftp_result cspftp_config(cspftp_t *session, const void *const data, uint32_t len);
 
     /**
      * Serialize a CSPFTP session using the given "writing" interface
