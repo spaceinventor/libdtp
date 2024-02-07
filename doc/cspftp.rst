@@ -1,3 +1,3 @@
 .. |module_image| replace:: \
 
-.. include:: ../README.md
+.. include:: ../README.rst

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <vmem/vmem.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -27,9 +28,11 @@ extern "C"
     typedef enum
     {
         CSPFTP_NO_ERR, //<! Chill, all good
-        CSPFTP_OUT_OF_STATIC_SESSIONS,
+        CSPFTP_EINVAL, //<! Invalid argument
+        CSPFTP_ENOMORE_SESSIONS, //<! All static sessions in use
+        CSPFTP_ESESSION_NOT_FOUND, //<! Given session not found
         CSPFTP_NOT_IMPLEMENTED, //<! Still under construction, sorry
-        CSPFTP_LAST_ERR //<! End of the line marker
+        CSPFTP_LAST_ERR
     } cspftp_errno_t;
 
     /** The current state of a CSPFTP transaction */
@@ -42,8 +45,8 @@ extern "C"
 
     /** The options pertaining to a CSPFTP session */
     typedef enum {
-        CSPFTP_OPT_1 = 1 << 0,
-        CSPFTP_OPT_2 = 1 << 1,
+        CSPFTP_REMOTE_CFG = 1 << 0,
+        CSPFTP_LOCAL_CFG = 1 << 1,
         CSPFTP_OPT_3 = 1 << 2,
         CSPFTP_OPT_4 = 1 << 3,
     } cspftp_option;
@@ -52,8 +55,12 @@ extern "C"
      * gettable/settable parameters for option 1
      */
     typedef struct {
-    } cspftp_opt_1;
+        uint16_t node;
+    } cspftp_opt_remote_cfg;
 
+    typedef struct {
+        vmem_t *vmem;
+    } cspftp_opt_local_cfg;
     /**
      * gettable/settable parameters for option 2
      */
@@ -77,7 +84,8 @@ extern "C"
      * All gettable/settable parameter types for a session
      */
     typedef union {
-        cspftp_opt_1 opt_1;
+        cspftp_opt_remote_cfg remote_cfg;
+        cspftp_opt_local_cfg local_cfg;
         cspftp_opt_2 opt_2;
         cspftp_opt_3 opt_3;
         cspftp_opt_4 opt_4;
@@ -98,51 +106,33 @@ extern "C"
      * 
      * @param[in] pointer to a session object previously obtained using cspftp_acquire_session()
      * 
-     * @return CSPFTP_OK if release ok, else valid pointer to session object or NULL in case of failure, see 
+     * @return CSPFTP_OK if release ok, see csftp_errno()
      */
     cspftp_result cspftp_release_session(cspftp_t *session);
 
     /**
-     * Dynamically create meta-data associated with a data transfer session
+     * Serialize a CSPFTP session using the given destination VMEM object
      * 
-     * @param[out] pointer to a session object pointer, will be set in case of success
+     * A serialized CSPFTP session can be read back as a valid session using the counterpart cspftp_deserialize_session() function.
      * 
-     * @return valid pointer to session object or NULL in case of failure, see csftp_errno()
-     */
-    cspftp_result cspftp_new_session(cspftp_t **session);
-
-    /**
-     * Release meta-data associated with a data transfer session
-     * 
-     * @param[in] session pointer to a valid cspftp session object
-     * 
-     * @return CSPFTP_OK
-     */
-    cspftp_result cspftp_config(cspftp_t *session, const void *const data, uint32_t len);
-
-    /**
-     * Serialize a CSPFTP session using the given "writing" interface
-     * 
-     * A serialized CSPFTP session can be read back as a valid session using the counterpart cspftp_serialize_session() function.
-     * 
-     * @param[in] pointer to a fwrite-like function that will be called to write serialized session data
-     * @param[in] pointer to a valid session object
+     * @param[in] session pointer to a valid session object
+     * @param[in] dst to a vmem_t object the session will be serialized to
      * 
      * @return CSPFTP_OK in serialization completed, else CSPFTP_ERR, see csftp_errno()
      *
      */
-    cspftp_result cspftp_serialize_session(cspftp_t *session, uint32_t (*write)(void *data, uint32_t length));
+    cspftp_result cspftp_serialize_session(cspftp_t *session, vmem_t *dst);
 
     /**
-     * Deserialize a CSPFTP session using the given "reading" interface
+     * Deserialize a CSPFTP session using the given source VMEM
      * 
-     * @param[in] pointer to a fread-like function that will be called to read serialized session data
-     * @param[inout] pointer to a valid session object (aka one that was obtained using cspftp_acquire_session() or cspftp_new_session())
+     * @param[in] session pointer to a fread-like function that will be called to read serialized session data
+     * @param[in] src pointer to a vmem_t object the session will be deserialized from
      * 
      * @return CSPFTP_OK in serialization completed, else CSPFTP_ERR, see csftp_errno(). If sucessful, the object will contained data as it was when the session was serialized.
      *
      */
-    cspftp_result cspftp_deserialize_session(cspftp_t *session, uint32_t (*read)(void *data, uint32_t length));
+    cspftp_result cspftp_deserialize_session(cspftp_t *session, vmem_t *src);
 
     /**
      * Get the errno value for the given session
@@ -196,6 +186,22 @@ extern "C"
      * @return CSPFTP_OK if session was stopped sucessfully, or CSPFTP_ERR in case of failure, see csftp_errno()
      */
     cspftp_result cspftp_stop_transfer(cspftp_t *session);
+
+    /**
+     * @brief 
+     * @param session 
+     * @param src 
+     * @return 
+     */
+    cspftp_result cspftp_set_source(cspftp_t *session, vmem_t *src);
+
+    /**
+     * @brief 
+     * @param session 
+     * @param dst 
+     * @return 
+     */
+    cspftp_result cspftp_set_destination(cspftp_t *session, vmem_t *dst);
 
 /*
 #pragma endregion

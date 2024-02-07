@@ -10,8 +10,8 @@ extern "C"
 struct TestMeta {
     void (*test)(void); /** actual test case function */
     const char *name; /** Human or IDE friendly test name (must be a valid C function name though) */
-    const char *file; 
-    int line;
+    const char *file;  /** file containing the test */
+    int line; /** start line in the file of the test */
  };
 
 /**
@@ -32,6 +32,9 @@ void x(void)
 
 #define UNITY_UTIL_MAIN()  unity_test_util_main(argc, argv, __FILE__);
 
+/**
+ * Utility main function, will scan the "test_registry" ELF file section to discover tests automatically
+ */
 extern int unity_test_util_main(int argc, const char *argv[], const char *__file__);
 
 #ifdef __cplusplus
