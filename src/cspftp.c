@@ -24,9 +24,6 @@ typedef struct {
  * @brief global CSPFTP error
  */
 static cspftp_errno_t last_error = CSPFTP_NO_ERR;
-static cspftp_t static_sessions[10] = {};
-static uint8_t session_count = 0;
-static const uint8_t MAX_NOF_STATIC_SESSIONS = sizeof(static_sessions)/sizeof(static_sessions[0]);
 
 static const char *const _error_strs[] = {
     "No error",
