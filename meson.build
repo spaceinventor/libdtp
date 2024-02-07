@@ -1,7 +1,8 @@
 project('cspftp', 'c', subproject_dir: 'extern', version: '0.0.1', default_options: ['default_library=static'])
 
 src = [
-    'src/cspftp.c'
+    'src/cspftp.c',
+    'src/session_data.c'
 ]
 include = include_directories('include')
 private_include = include_directories('src')

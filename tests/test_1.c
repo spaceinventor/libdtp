@@ -29,14 +29,14 @@ REGISTER_TEST(test_serialize_session) {
 REGISTER_TEST(test_options) {
     cspftp_t *session = cspftp_acquire_session();    
     cspftp_params r_info = {
-        .remote_info.remote = 0
+        .remote_cfg.node = 0
     };
-    cspftp_result res = cspftp_set_opt(session, CSPFTP_REMOTE_INFO, &r_info);
+    cspftp_result res = cspftp_set_opt(session, CSPFTP_REMOTE_CFG, &r_info);
     TEST_ASSERT(res == CSPFTP_OK);
-    r_info.remote_info.remote = 255;
-    res = cspftp_get_opt(session, CSPFTP_REMOTE_INFO, &r_info);
+    r_info.remote_cfg.node = 255;
+    res = cspftp_get_opt(session, CSPFTP_REMOTE_CFG, &r_info);
     TEST_ASSERT(res == CSPFTP_OK);
-    TEST_ASSERT(0 == r_info.remote_info.remote);
+    TEST_ASSERT(0 == r_info.remote_cfg.node);
 }
 
 int main(int argc, const char *argv[]) {

@@ -44,8 +44,8 @@ extern "C"
 
     /** The options pertaining to a CSPFTP session */
     typedef enum {
-        CSPFTP_REMOTE_INFO = 1 << 0,
-        CSPFTP_OPT_2 = 1 << 1,
+        CSPFTP_REMOTE_CFG = 1 << 0,
+        CSPFTP_LOCAL_CFG = 1 << 1,
         CSPFTP_OPT_3 = 1 << 2,
         CSPFTP_OPT_4 = 1 << 3,
     } cspftp_option;
@@ -54,9 +54,12 @@ extern "C"
      * gettable/settable parameters for option 1
      */
     typedef struct {
-        uint16_t remote;
-    } cspftp_opt_remote_info;
+        uint16_t node;
+    } cspftp_opt_remote_cfg;
 
+    typedef struct {
+        vmem_t *vmem;
+    } cspftp_opt_local_cfg;
     /**
      * gettable/settable parameters for option 2
      */
@@ -80,7 +83,8 @@ extern "C"
      * All gettable/settable parameter types for a session
      */
     typedef union {
-        cspftp_opt_remote_info remote_info;
+        cspftp_opt_remote_cfg remote_cfg;
+        cspftp_opt_local_cfg local_cfg;
         cspftp_opt_2 opt_2;
         cspftp_opt_3 opt_3;
         cspftp_opt_4 opt_4;

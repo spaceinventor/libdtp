@@ -2,13 +2,15 @@
 #include <stdbool.h>
 
 #include "cspftp/cspftp.h"
+#include <csp/csp.h>
 
 /**
  * @brief CSPFTP session, internal definition
  */
 typedef struct cspftp_t
 {
-    cspftp_opt_remote_info remote_info;
+    cspftp_opt_remote_cfg remote_cfg;
+    cspftp_opt_local_cfg local_cfg;
     cspftp_errno_t errno;
 } cspftp_t;
 
@@ -37,6 +39,8 @@ static const uint32_t serializer_version = 1;
 #define CSPFTP_NOF_STATIC_SESSIONS 5
 static const uint8_t cspftp_nof_static_sessions = CSPFTP_NOF_STATIC_SESSIONS;
 static cspftp_static_session_t static_sessions[CSPFTP_NOF_STATIC_SESSIONS] = {0};
+
+static cspftp_result get_remote_meta(cspftp_t *session);
 
 cspftp_errno_t cspftp_errno(cspftp_t *session)
 {
@@ -80,8 +84,12 @@ cspftp_result cspftp_release_session(cspftp_t *session)
 cspftp_result cspftp_set_opt(cspftp_t *session, cspftp_option option, cspftp_params *param)
 {
     switch(option) {
-        case CSPFTP_REMOTE_INFO: {
-            session->remote_info.remote = param->remote_info.remote;
+        case CSPFTP_REMOTE_CFG: {
+            session->remote_cfg.node = param->remote_cfg.node;
+            break;
+        }
+        case CSPFTP_LOCAL_CFG: {
+            session->local_cfg.vmem = param->local_cfg.vmem;
             break;
         }
         default:
@@ -93,8 +101,12 @@ cspftp_result cspftp_set_opt(cspftp_t *session, cspftp_option option, cspftp_par
 cspftp_result cspftp_get_opt(cspftp_t *session, cspftp_option option, cspftp_params *param)
 {
     switch(option) {
-        case CSPFTP_REMOTE_INFO: {
-            param->remote_info.remote = session->remote_info.remote;
+        case CSPFTP_REMOTE_CFG: {
+            param->remote_cfg.node = session->remote_cfg.node;
+            break;
+        }
+        case CSPFTP_LOCAL_CFG: {
+            param->local_cfg.vmem = session->local_cfg.vmem;
             break;
         }
         default:
@@ -105,7 +117,13 @@ cspftp_result cspftp_get_opt(cspftp_t *session, cspftp_option option, cspftp_par
 
 cspftp_result cspftp_start_transfer(cspftp_t *session)
 {
-    return CSPFTP_OK;
+    cspftp_result res = get_remote_meta(session);
+    if(CSPFTP_OK == res) {
+        while(true) {
+
+        }
+    }
+    return res;
 }
 
 cspftp_result cspftp_stop_transfer(cspftp_t *session)
@@ -134,4 +152,12 @@ cspftp_result cspftp_serialize_session(cspftp_t *session, vmem_t *dest)
 
 cspftp_result cspftp_deserialize_session(cspftp_t *session, vmem_t *src) {
     return CSPFTP_OK;
+}
+
+
+static cspftp_result get_remote_meta(cspftp_t *session) {
+    cspftp_result res = CSPFTP_OK;    
+    csp_init();
+    csp_conn_t *connection = csp_connect(CSP_PRIO_HIGH, session->remote_cfg.node, 0, 0, 0);
+    return res;
 }
