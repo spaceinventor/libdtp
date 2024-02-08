@@ -9,8 +9,8 @@ static const char *yellow = YELLOW;
 static const char *green = GREEN;
 static const char *reset = RESET;
 
-extern void dbg_log(const char *__restrict __format, ...) {
-    fprintf(stdout, "%s", green);
+extern void dbg_log_impl(const char *file, unsigned int line, const char *__restrict __format, ...) {
+    fprintf(stdout, "%s[LOG] %s:%u: ", green, file, line);
     va_list start;
     va_start(start, __format);
     vfprintf(stdout, __format, start);
@@ -18,8 +18,8 @@ extern void dbg_log(const char *__restrict __format, ...) {
     fprintf(stdout, "%s\n", reset); fflush(stdout);
 }
 
-extern void dbg_warn(const char *__restrict __format, ...) {
-    fprintf(stdout, "%s", yellow);
+extern void dbg_warn_impl(const char *file, unsigned int line, const char *__restrict __format, ...) {
+    fprintf(stdout, "%s[WARN] %s:%u: ", yellow, file, line);
     va_list start;
     va_start(start, __format);
     vfprintf(stdout, __format, start);
