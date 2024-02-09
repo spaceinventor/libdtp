@@ -43,7 +43,7 @@ if doxygen.found()
   endif
 
   cdata.set('TOP_SRCDIR', meson.project_source_root())
-  cdata.set('TOP_BUILDDIR', meson.project_build_root())
+  cdata.set('TOP_BLDDIR', meson.project_build_root())
 
   doxyfile = configure_file(input: 'Doxyfile.in',
                             output: 'Doxyfile',
