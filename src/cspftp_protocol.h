@@ -24,6 +24,8 @@ extern "C"
 
     extern cspftp_result send_remote_meta_req(cspftp_t *session);
     extern cspftp_result read_remote_meta_resp(cspftp_t *session);
+    extern cspftp_result start_sending_data(uint16_t dest);
+    extern cspftp_result start_receiving_data(cspftp_t *session);
 #ifdef __cplusplus
 }
 #endif
