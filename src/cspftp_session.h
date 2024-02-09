@@ -21,6 +21,7 @@ extern "C"
         csp_conn_t *conn;
         cspftp_opt_remote_cfg remote_cfg;
         cspftp_opt_local_cfg local_cfg;
+        uint32_t bytes_received;
         cspftp_errno_t errno;
     } cspftp_t;
 

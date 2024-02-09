@@ -63,6 +63,7 @@ cspftp_t *cspftp_acquire_session()
         if (false == static_sessions[i].in_use)
         {
             static_sessions[i].in_use = true;
+            static_sessions[i].session.bytes_received = 0;
             last_error = CSPFTP_NO_ERR;
             return &(static_sessions[i].session);
         }
@@ -139,7 +140,12 @@ cspftp_result cspftp_start_transfer(cspftp_t *session)
     {
         goto get_out;
     }
-    res = read_remote_meta_resp(session);
+    res = read_remote_meta_resp(session);    
+    if (CSPFTP_OK != res)
+    {
+        goto get_out;
+    }
+    res = start_receiving_data(session);
 get_out:
     return res;
 }
