@@ -37,6 +37,7 @@ static void cspftp_server_run()
             cspftp_meta_resp_t *meta_resp = (cspftp_meta_resp_t *)packet->data;
             meta_resp->status = 0xff00ff00;
             csp_send(conn, packet);
+            start_sending_data(csp_conn_src(conn));
         }
     }
 }
