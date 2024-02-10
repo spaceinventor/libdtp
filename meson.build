@@ -13,9 +13,10 @@ private_include = include_directories('src')
 
 csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true)
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true)
+slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true)
 
-cspftp_lib = library('cspftp', src, include_directories: [include, private_include], dependencies: [csp_dep, param_dep])
-cspftp_lib_dep = declare_dependency(include_directories : include, link_with : cspftp_lib, dependencies: [csp_dep, param_dep])
+cspftp_lib = library('cspftp', src, include_directories: [include, private_include], dependencies: [csp_dep, param_dep, slash_dep])
+cspftp_lib_dep = declare_dependency(include_directories : include, link_with : cspftp_lib, dependencies: [csp_dep, param_dep, slash_dep])
 
 subdir('tests')
 
