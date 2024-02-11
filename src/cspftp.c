@@ -140,7 +140,7 @@ cspftp_result cspftp_start_transfer(cspftp_t *session)
     {
         goto get_out;
     }
-    res = read_remote_meta_resp(session);    
+    res = read_remote_meta_resp(session);
     if (CSPFTP_OK != res)
     {
         goto get_out;
