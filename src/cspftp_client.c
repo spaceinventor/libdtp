@@ -12,11 +12,12 @@ int dtp_client_main(int argc, char *argv[]) {
     session = cspftp_acquire_session();
     if (!session) {
         dbg_log("%s", cspftp_strerror(cspftp_errno(session)));
+        goto get_out_please;
     } else {
         dbg_warn("Session created: %p", session);
     }
 
-    cspftp_params remote_cfg = { .remote_cfg.node = 0 };
+    cspftp_params remote_cfg = { .remote_cfg.node = 3 };
     cspftp_result res = cspftp_set_opt(session, CSPFTP_REMOTE_CFG, &remote_cfg);
     if (CSPFTP_OK != res) {
         goto get_out_please;
@@ -33,7 +34,8 @@ int dtp_client_main(int argc, char *argv[]) {
     if (CSPFTP_OK != res) {
         goto get_out_please;    
     }
-get_out_please:    
+get_out_please:
+    cspftp_release_session(session);
     dbg_log("Bye...");
     return 0;
 }

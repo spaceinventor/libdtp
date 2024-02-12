@@ -129,13 +129,14 @@ cspftp_result cspftp_get_opt(cspftp_t *session, cspftp_option option, cspftp_par
 
 cspftp_result cspftp_start_transfer(cspftp_t *session)
 {
-    csp_conn_t *conn = csp_connect(CSP_PRIO_HIGH, session->remote_cfg.node, 15, 0, 0);
+    cspftp_result res = CSPFTP_ERR;
+    csp_conn_t *conn = csp_connect(CSP_PRIO_HIGH, session->remote_cfg.node, 2, 5, 0);
     if (NULL == conn) {
         session->errno = CSPFTP_CONNECTION_FAILED;
         goto get_out;
     }
     session->conn = conn;
-    cspftp_result res = send_remote_meta_req(session);    
+    res = send_remote_meta_req(session);    
     if (CSPFTP_OK != res)
     {
         goto get_out;
