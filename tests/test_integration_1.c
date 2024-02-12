@@ -65,7 +65,7 @@ void tearDown() {
 
 }
 
-REGISTER_TEST(interprocess_transfer) {
+REGISTER_TEST(in_process_transfer) {
 	extern int dtp_client_main(int argc, char *argv[]);
 	TEST_ASSERT(0 == dtp_client_main(0, NULL));
 }
