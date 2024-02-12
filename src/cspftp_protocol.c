@@ -30,25 +30,6 @@ cspftp_result read_remote_meta_resp(cspftp_t *session)
     return res;
 }
 
-static bool transfer_in_progress(cspftp_t *session)
-{
-    bool result = true;
-    // TODO: this is for test purposes, real implementation will use session data to determine the status
-    static uint16_t tmp_counter1 = 1024;
-    tmp_counter1--;
-    result = tmp_counter1 != 0;
-    return result;
-}
-
-static bool send_more_data() {
-    bool result = true;
-    // TODO: this is for test purposes, real implementation will use payload data to determine the status
-    static uint16_t tmp_counter2 = 1024;
-    tmp_counter2--;
-    result = tmp_counter2 != 0;
-    return result;
-}
-
 #define PKT_SIZE (CSP_BUFFER_SIZE)
 
 extern cspftp_result start_sending_data(uint16_t dest)
@@ -88,7 +69,6 @@ extern cspftp_result start_receiving_data(cspftp_t *session)
     if(CSP_ERR_NONE == csp_bind(&socket, 16)) {
         csp_listen(&socket, 1);
         while (session->bytes_received < 1024 * PKT_SIZE)
-        // while (transfer_in_progress(session))
         {
             packet = csp_recvfrom(&socket, 2000000);
             if(NULL == packet) {
