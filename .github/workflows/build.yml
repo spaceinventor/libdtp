@@ -17,4 +17,4 @@ jobs:
         with:
           action: test
           directory: build
-          meson-version: 0.61.2
+          meson-version: 0.63.1
