@@ -6,7 +6,7 @@
 static void cspftp_server_run()
 {
     csp_socket_t sock = {0};
-    csp_bind(&sock, 15);
+    csp_bind(&sock, 7);
 
     /* Create a backlog of 1 connection */
     csp_listen(&sock, 1);
@@ -30,6 +30,8 @@ static void cspftp_server_run()
         }
         dbg_log("Got meta data request");
         cspftp_meta_req_t *meta_req = (cspftp_meta_req_t *)packet->data;
+        /* TODO: Do something with meta request data */
+        (void)meta_req;
         csp_buffer_free(packet);
         packet = csp_buffer_get(0);
         if(packet) {
@@ -44,7 +46,6 @@ static void cspftp_server_run()
 
 int dtp_server_main(int argc, char *argv[])
 {
-    csp_init();
     cspftp_server_run();
     return 0;
 }
