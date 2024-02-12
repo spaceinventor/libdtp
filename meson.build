@@ -1,4 +1,17 @@
-project('cspftp', 'c', subproject_dir: 'extern', version: '0.0.1', default_options: ['default_library=static'])
+project('cspftp', 'c', subproject_dir: 'extern', version: '0.0.1', default_options: [
+	'b_lto=false',
+  'b_lundef=false',
+	'csp:packet_padding_bytes=42', 
+	'csp:buffer_count=1000',
+	'csp:buffer_size=2048',
+	'csp:conn_max=20',
+	'csp:conn_rxqueue_len=1000',
+	'csp:qfifo_len=1000',
+	'csp:rdp_max_window=1000',
+	'csp:port_max_bind=16',
+	'csp:use_rtable=true',
+  'param:list_dynamic=true',
+  'default_library=static'])
 
 src = [
     'src/cspftp.c',
@@ -18,6 +31,7 @@ slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true
 cspftp_lib = library('cspftp', src, include_directories: [include, private_include], dependencies: [csp_dep, param_dep, slash_dep])
 cspftp_lib_dep = declare_dependency(include_directories : include, link_with : cspftp_lib, dependencies: [csp_dep, param_dep, slash_dep])
 
+subdir('apm')
 subdir('tests')
 
 gen_doc = find_program('gen-sidoc', required: false)

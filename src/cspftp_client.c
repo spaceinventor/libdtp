@@ -54,7 +54,8 @@ int dtp_client_main(int argc, char *argv[]) {
     if (CSPFTP_OK != res) {
         goto get_out_please;    
     }
-get_out_please:    
+get_out_please:
+    cspftp_release_session(session);
     dbg_log("Bye...");
     return 0;
 }
