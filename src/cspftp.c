@@ -63,9 +63,13 @@ cspftp_t *cspftp_acquire_session()
         if (false == static_sessions[i].in_use)
         {
             static_sessions[i].in_use = true;
-            static_sessions[i].session.bytes_received = 0;
+            cspftp_t *session = &static_sessions[i].session;
+            session->bytes_received = 0;
+            session->request_meta.nof_intervals = 1;
+            session->request_meta.intervals[0].start = 0;
+             session->request_meta.intervals[0].end = 0xffffffff; /* interval 0-0xFFFFFFFF means the whole thing */
             last_error = CSPFTP_NO_ERR;
-            return &(static_sessions[i].session);
+            return session;
         }
     }
     last_error = CSPFTP_ENOMORE_SESSIONS;

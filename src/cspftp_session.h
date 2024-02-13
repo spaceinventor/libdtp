@@ -12,6 +12,7 @@ extern "C"
 #include <stdint.h>
 #include <csp/csp.h>
 #include "cspftp/cspftp.h"
+#include "cspftp_protocol.h"
 
     /**
      * @brief CSPFTP session, internal definition
@@ -23,6 +24,7 @@ extern "C"
         cspftp_opt_local_cfg local_cfg;
         uint32_t bytes_received;
         cspftp_errno_t errno;
+        cspftp_meta_req_t request_meta;
     } cspftp_t;
 
 #ifdef __cplusplus

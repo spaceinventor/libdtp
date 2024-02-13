@@ -15,7 +15,6 @@ cspftp_result send_remote_meta_req(cspftp_t *session)
     {
         packet->length = sizeof(cspftp_meta_req_t);
         cspftp_meta_req_t *req = (cspftp_meta_req_t *)packet->data;
-        req->ts = 0xff00ff00;
         csp_send(session->conn, packet);
         res = CSPFTP_OK;
     }
