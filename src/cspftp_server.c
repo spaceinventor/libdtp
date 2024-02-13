@@ -41,6 +41,7 @@ static void cspftp_server_run()
             csp_send(conn, packet);
             start_sending_data(csp_conn_src(conn));
         }
+        csp_close(conn);
     }
 }
 
