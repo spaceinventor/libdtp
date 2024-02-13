@@ -23,6 +23,7 @@ extern "C"
         cspftp_opt_remote_cfg remote_cfg;
         cspftp_opt_local_cfg local_cfg;
         uint32_t bytes_received;
+        uint32_t total_bytes;
         cspftp_errno_t errno;
         cspftp_meta_req_t request_meta;
     } cspftp_t;

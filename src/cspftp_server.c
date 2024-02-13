@@ -3,22 +3,6 @@
 #include "cspftp_protocol.h"
 #include "cspftp_log.h"
 
-static cspftp_meta_req_t transfer_ctx;
-
-static csp_packet_t *setup_transfer(csp_packet_t *request) {
-    csp_packet_t *result = 0;
-    memcpy(&transfer_ctx, (cspftp_meta_req_t *)request->data, sizeof(cspftp_meta_req_t));
-    csp_buffer_free(request);
-    result = csp_buffer_get(0);
-    if (result) {
-        /* prepare the response */
-        result->length = sizeof(cspftp_meta_req_t);
-        cspftp_meta_resp_t *meta_resp = (cspftp_meta_resp_t *)result->data;
-        meta_resp->size_bytes = 0xff00ff00;
-    }
-    return result;
-}
-
 static void cspftp_server_run()
 {
     csp_socket_t sock = {0};
@@ -45,11 +29,10 @@ static void cspftp_server_run()
             continue;
         }
         dbg_log("Got meta data request");
-        /* TODO: Do something with meta request data */
-        packet = setup_transfer(packet);
+        packet = setup_server_transfer(&server_transfer_ctx, csp_conn_src(conn), packet);
         if(packet) {
             csp_send(conn, packet);
-            start_sending_data(csp_conn_src(conn));
+            start_sending_data(&server_transfer_ctx);
         }
         csp_close(conn);
     }

@@ -134,30 +134,6 @@ cspftp_result cspftp_get_opt(cspftp_t *session, cspftp_option option, cspftp_par
     return CSPFTP_OK;
 }
 
-cspftp_result cspftp_start_transfer(cspftp_t *session)
-{
-    cspftp_result res = CSPFTP_ERR;
-    csp_conn_t *conn = csp_connect(CSP_PRIO_HIGH, session->remote_cfg.node, 7, 5, 0);
-    if (NULL == conn) {
-        session->errno = CSPFTP_CONNECTION_FAILED;
-        goto get_out;
-    }
-    session->conn = conn;
-    res = send_remote_meta_req(session);    
-    if (CSPFTP_OK != res)
-    {
-        goto get_out;
-    }
-    res = read_remote_meta_resp(session);
-    if (CSPFTP_OK != res)
-    {
-        goto get_out;
-    }
-    res = start_receiving_data(session);
-get_out:
-    return res;
-}
-
 cspftp_result cspftp_stop_transfer(cspftp_t *session)
 {
     return CSPFTP_OK;
@@ -179,6 +155,7 @@ cspftp_result cspftp_serialize_session(cspftp_t *session, vmem_t *dest)
     /* Write serialization version number first */
     dest->write(dest, offset, &serializer_version, sizeof(serializer_version));
     offset += sizeof(serializer_version);
+    (void) offset;
     return CSPFTP_OK;
 }
 
