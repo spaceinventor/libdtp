@@ -79,8 +79,10 @@ cspftp_result cspftp_release_session(cspftp_t *session)
         if (session == &(static_sessions[i].session))
         {
             csp_close(static_sessions[i].session.conn);
+            /* Save session last error in case somebody asks after releasing */
+            last_error = static_sessions[i].session.errno;
             static_sessions[i].in_use = false;
-            last_error = CSPFTP_NO_ERR;
+            static_sessions[i].session.errno = CSPFTP_NO_ERR;
             return CSPFTP_OK;
         }
     }

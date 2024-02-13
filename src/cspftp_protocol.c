@@ -31,6 +31,8 @@ cspftp_result read_remote_meta_resp(cspftp_t *session)
     {
         res = CSPFTP_OK;
         csp_buffer_free(packet);
+    } else {
+        session->errno = CSPFTP_CONNECTION_FAILED;
     }
     return res;
 }

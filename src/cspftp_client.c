@@ -1,6 +1,7 @@
 #include <stdlib.h> /* exit() */
 #include "cspftp_log.h"
 #include "cspftp/cspftp.h"
+#include "cspftp_internal_api.h"
 #include <csp/csp.h>
 #include <vmem/vmem_ram.h>
 #include <slash/optparse.h>
@@ -26,16 +27,17 @@ int dtp_client_main(int argc, char *argv[]) {
     int argi = optparse_parse(parser, argc - 1, (const char **) argv + 1);
     if (argi < 0) {
         optparse_del(parser);
-	    return CSPFTP_EINVAL;
+        cspftp_set_errno(NULL, CSPFTP_EINVAL);
+	    return CSPFTP_ERR;
     }
 
     /* Check "argi" if positional args are needed*/
-    dbg_warn("Exit after transaction: %u", opts.exit);
     dbg_enable_colors(opts.color);
 
     session = cspftp_acquire_session();
     if (!session) {
         dbg_warn("%s", cspftp_strerror(cspftp_errno(session)));
+        goto get_out_please;
     } else {
         dbg_log("Session created: %p", session);
     }
@@ -44,7 +46,6 @@ int dtp_client_main(int argc, char *argv[]) {
     cspftp_result res = cspftp_set_opt(session, CSPFTP_REMOTE_CFG, &remote_cfg);
     if (CSPFTP_OK != res) {
         goto get_out_please;
-    
     }
 
     cspftp_params local_cfg = { .local_cfg.vmem = 0 };
