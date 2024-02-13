@@ -78,6 +78,7 @@ cspftp_result cspftp_release_session(cspftp_t *session)
     {
         if (session == &(static_sessions[i].session))
         {
+            csp_close(static_sessions[i].session.conn);
             static_sessions[i].in_use = false;
             last_error = CSPFTP_NO_ERR;
             return CSPFTP_OK;
