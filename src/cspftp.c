@@ -180,3 +180,14 @@ cspftp_result cspftp_deserialize_session(cspftp_t *session, vmem_t *src)
 {
     return CSPFTP_OK;
 }
+
+/* Internal functions */
+void cspftp_set_errno(cspftp_t *session, cspftp_errno_t errno)
+{
+    if (0 != session)
+    {
+        session->errno = errno;
+    } else {
+        last_error = errno;
+    }
+}
