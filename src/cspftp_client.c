@@ -16,7 +16,8 @@ typedef struct {
 } dtp_client_opts_t;
 
 int dtp_client_main(int argc, char *argv[]) {
-    cspftp_t *session;
+    cspftp_t *session = NULL;
+    cspftp_result res = CSPFTP_OK;
     dtp_client_opts_t opts = { 0 };
     optparse_t * parser = optparse_new("dt", "<name>");
     optparse_add_help(parser);
@@ -28,7 +29,8 @@ int dtp_client_main(int argc, char *argv[]) {
     if (argi < 0) {
         optparse_del(parser);
         cspftp_set_errno(NULL, CSPFTP_EINVAL);
-	    return CSPFTP_ERR;
+        res = CSPFTP_ERR;
+        goto get_out_please;
     }
 
     /* Check "argi" if positional args are needed*/
@@ -37,13 +39,15 @@ int dtp_client_main(int argc, char *argv[]) {
     session = cspftp_acquire_session();
     if (!session) {
         dbg_warn("%s", cspftp_strerror(cspftp_errno(session)));
+        cspftp_set_errno(NULL, CSPFTP_ENOMORE_SESSIONS);
+        res = CSPFTP_ERR;
         goto get_out_please;
     } else {
         dbg_log("Session created: %p", session);
     }
 
     cspftp_params remote_cfg = { .remote_cfg.node = opts.server };
-    cspftp_result res = cspftp_set_opt(session, CSPFTP_REMOTE_CFG, &remote_cfg);
+    res = cspftp_set_opt(session, CSPFTP_REMOTE_CFG, &remote_cfg);
     if (CSPFTP_OK != res) {
         goto get_out_please;
     }
