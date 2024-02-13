@@ -1,3 +1,4 @@
+#include <stdlib.h> /* exit() */
 #include "cspftp_log.h"
 #include "cspftp/cspftp.h"
 #include <csp/csp.h>
@@ -9,15 +10,17 @@ VMEM_DEFINE_STATIC_RAM_ADDR(session_serialize_test, "session_serialize_test", si
 
 typedef struct {
     int color;
+    int exit;
     uint32_t server;
 } dtp_client_opts_t;
 
 int dtp_client_main(int argc, char *argv[]) {
     cspftp_t *session;
-    dtp_client_opts_t opts;
+    dtp_client_opts_t opts = { 0 };
     optparse_t * parser = optparse_new("dt", "<name>");
     optparse_add_help(parser);
     optparse_add_set(parser, 'c', "color", 1, &opts.color, "enable color output");
+    optparse_add_set(parser, 'e', "exit", 1, &opts.exit, "exit after transaction");
 	optparse_add_unsigned(parser, 's', "server", "CSP address", 0, &opts.server, "CSP Address of the DT server to retrieve data from (default = 0))");
 
     int argi = optparse_parse(parser, argc - 1, (const char **) argv + 1);
@@ -27,7 +30,7 @@ int dtp_client_main(int argc, char *argv[]) {
     }
 
     /* Check "argi" if positional args are needed*/
-
+    dbg_warn("Exit after transaction: %u", opts.exit);
     dbg_enable_colors(opts.color);
 
     session = cspftp_acquire_session();
@@ -57,5 +60,8 @@ int dtp_client_main(int argc, char *argv[]) {
 get_out_please:
     cspftp_release_session(session);
     dbg_log("Bye...");
-    return 0;
+    if (opts.exit) {
+        exit(res);
+    }
+    return res;
 }
