@@ -7,50 +7,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <signal.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <csp/csp.h>
 #include "unity.h"
 #include "unity_test_utils.h"
 
-static void *router(void *param)
-{
-
-	/* Here there be routing */
-	while (1)
-	{
-		csp_route_work();
-	}
-
-	return NULL;
-}
-
-static int run_in_thread(void *(*routine)(void *), const char *name)
-{
-
-	pthread_attr_t attributes;
-	pthread_t handle;
-	int ret;
-
-	if (pthread_attr_init(&attributes) != 0)
-	{
-		return -1;
-	}
-	/* no need to join with thread to free its resources */
-	pthread_attr_setdetachstate(&attributes, PTHREAD_CREATE_DETACHED);
-
-	ret = pthread_create(&handle, &attributes, routine, NULL);
-	pthread_attr_destroy(&attributes);
-
-	if (ret != 0)
-	{
-		return ret;
-	}
-	pthread_setname_np(handle, name);
-	return 0;
-}
-
 static pid_t server_pid;
+static pid_t zmqproxy_pid;
 
 static bool exists(const char fname[])
 {
@@ -92,22 +57,15 @@ void setUp()
 		server_pid = fork();
 		if (server_pid == 0)
 		{
-			server_pid = fork();
-			if (server_pid == 0)
+			/* child process*/
+			execlp("csh", "csh", "-i", "conf/dtp_server.csh", NULL);
+		} else if(server_pid > 0) {
+			zmqproxy_pid = fork();
+			if (zmqproxy_pid == 0)
 			{
-				/* child process*/
-				execlp("csh", "csh", "-i/home/jbl/spaceinventor/cspftp/conf/dtp_server.csh", NULL);
-			} else if (server_pid > 0) {
 				/* child process*/
 				execlp("zmqproxy", "zmqproxy", NULL);
 			}
-			else {
-				perror("fork fail");
-				exit(1);
-			}
-		} else if (server_pid < 0) {
-			perror("fork fail");
-			exit(1);
 		}
 	}
 }
@@ -121,7 +79,11 @@ REGISTER_TEST(inter_process_transfer)
 	if (csh_available) {
 		extern int dtp_client_main(int argc, char *argv[]);
 		char *cmd_line = "csh -i conf/dtp_client.csh";
-		TEST_ASSERT(0 == system(cmd_line));
+		sleep(2);
+		int res = system(cmd_line);
+		kill(server_pid, 9);
+		kill(zmqproxy_pid, 9);
+		TEST_ASSERT(0 == res);
 	} else {
 		TEST_IGNORE_MESSAGE("csh not found in path");
 	}
