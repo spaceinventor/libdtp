@@ -127,7 +127,7 @@ extern "C"
     /**
      * Deserialize a CSPFTP session using the given source VMEM
      * 
-     * @param[in] session pointer to a fread-like function that will be called to read serialized session data
+     * @param[in] session pointer to a valid session object
      * @param[in] src pointer to a vmem_t object the session will be deserialized from
      * 
      * @return CSPFTP_OK in serialization completed, else CSPFTP_ERR, see csftp_errno(). If sucessful, the object will contained data as it was when the session was serialized.
