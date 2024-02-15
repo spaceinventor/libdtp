@@ -7,7 +7,7 @@
 #include "cspftp_log.h"
 #include "cspftp_session.h"
 
-#define PKT_SIZE (CSP_BUFFER_SIZE)
+#define PKT_SIZE (CSP_BUFFER_SIZE -16)
 
 cspftp_server_transfer_ctx_t server_transfer_ctx;
 
@@ -75,6 +75,8 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
         .tv_sec = 0,
         .tv_nsec = 100000
     };
+    // nanosleep(&sleep_for, NULL);
+    sleep_for.tv_nsec = 1000;
     for(uint8_t i = 0; i < ctx->request.nof_intervals; i++)
     {
         uint32_t interval_start = ctx->request.intervals[i].start;
@@ -82,7 +84,7 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
         uint32_t bytes_in_interval = interval_stop - interval_start;
         uint32_t sent_in_interval = 0;
         while(sent_in_interval < bytes_in_interval) {
-            nanosleep(&sleep_for, NULL);
+            // nanosleep(&sleep_for, NULL);
             packet = csp_buffer_get(0);
             if(NULL == packet) {
                 // Count maybe ?
@@ -97,14 +99,13 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
             sent_in_interval += packet->length;
         }
     }
-    result = CSPFTP_ERR;
     return result;
 }
 
 extern cspftp_result cspftp_start_transfer(cspftp_t *session)
 {
     cspftp_result res = CSPFTP_ERR;
-    csp_conn_t *conn = csp_connect(CSP_PRIO_HIGH, session->remote_cfg.node, 7, 5, 0);
+    csp_conn_t *conn = csp_connect(CSP_PRIO_HIGH, session->remote_cfg.node, 7, 5, CSP_O_RDP);
     if (NULL == conn) {
         session->errno = CSPFTP_CONNECTION_FAILED;
         goto get_out;
@@ -129,14 +130,14 @@ extern cspftp_result start_receiving_data(cspftp_t *session)
 {
     cspftp_result result = CSPFTP_OK;
     csp_packet_t *packet;
-    csp_socket_t socket = { .opts = CSP_SO_CONN_LESS };
+    static csp_socket_t socket = { .opts = CSP_SO_CONN_LESS };
     uint32_t current_seq = 0;
     dbg_log("Start receiving data");
     if(CSP_ERR_NONE == csp_bind(&socket, 8)) {
         csp_listen(&socket, 1);
         while (session->bytes_received < session->total_bytes)
         {
-            packet = csp_recvfrom(&socket, 2000000);
+            packet = csp_recvfrom(&socket, 2);
             if(NULL == packet) {
                 // Count maybe ?
                 continue;
@@ -149,12 +150,13 @@ extern cspftp_result start_receiving_data(cspftp_t *session)
             }
             current_seq++;
             csp_buffer_free(packet);
-            if ((packet->data32[0]) / PKT_SIZE == 1023) {
+            if ((packet->data32[0] / PKT_SIZE) == 1023) {
                 break;
             }
         }
     } else {
         result = CSPFTP_ERR;
     }
+    dbg_log("Received %d bytes, status: %d", session->bytes_received, result);
     return result;
 }

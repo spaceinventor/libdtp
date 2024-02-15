@@ -23,7 +23,7 @@ extern "C"
     typedef struct
     {
         uint8_t nof_intervals;
-        interval_t intervals[49];
+        interval_t intervals[19];
     } cspftp_meta_req_t;
 
     typedef struct {

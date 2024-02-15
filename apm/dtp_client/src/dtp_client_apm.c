@@ -24,4 +24,4 @@ int dtp_client(struct slash *s)
     return SLASH_SUCCESS;
 }
 
-slash_command(dtp_client, dtp_client, "asdawd", "DTP client");
+slash_command(dtp_client, dtp_client, "", "DTP client");

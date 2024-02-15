@@ -1,38 +1,42 @@
-project('cspftp', 'c', subproject_dir: 'extern', version: '0.0.1', default_options: [
-	'b_lto=false',
-  'b_lundef=false',
-	'csp:packet_padding_bytes=42', 
-	'csp:buffer_count=1000',
-	'csp:buffer_size=2048',
-	'csp:conn_max=20',
-	'csp:conn_rxqueue_len=1000',
-	'csp:qfifo_len=1000',
-	'csp:rdp_max_window=1000',
-	'csp:port_max_bind=16',
-	'csp:use_rtable=true',
-  'param:list_dynamic=true',
-  'default_library=static'])
+project('cspftp', 'c', subproject_dir: 'extern', version: '0.0.1', default_options: [])
+# 	'csp:packet_padding_bytes=42', 
+# 	'csp:buffer_count=1000',
+# #	'csp:buffer_size=2048',
+# 	'csp:conn_max=20',
+# 	'csp:conn_rxqueue_len=1000',
+# 	'csp:qfifo_len=1000',
+# 	'csp:rdp_max_window=1000',
+# 	'csp:port_max_bind=16',
+# 	'csp:use_rtable=true',
+#   'param:list_dynamic=true',
+#   'default_library=static'])
 
-src = [
-    'src/cspftp.c',
-    'src/cspftp_log.c',
-    'src/cspftp_protocol.c',
-    'src/cspftp_server.c',
-    'src/cspftp_client.c',
-    'src/session_data.c'
-]
 include = include_directories('include')
-private_include = include_directories('src')
 
-csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true)
-param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true)
-slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true)
+subdir('src')
 
-cspftp_lib = library('cspftp', src, include_directories: [include, private_include], dependencies: [csp_dep, param_dep, slash_dep])
-cspftp_lib_dep = declare_dependency(include_directories : include, link_with : cspftp_lib, dependencies: [csp_dep, param_dep, slash_dep])
+# src = [
+#     'src/cspftp.c',
+#     'src/cspftp_log.c',
+#     'src/cspftp_protocol.c',
+#     'src/cspftp_server.c',
+#     'src/cspftp_client.c',
+#     'src/session_data.c'
+# ]
+# include = include_directories('include')
 
-subdir('apm')
-subdir('tests')
+# private_include = include_directories('src')
+
+# csp_dep = subproject('csp').get_variable('csp_dep')
+# param_dep = subproject('param').get_variable('param_dep')
+
+# lib_deps = [csp_dep, param_dep]
+# cspftp_lib = library('cspftp', src, include_directories: [include, private_include], dependencies: lib_deps)
+# cspftp_lib_dep = declare_dependency(include_directories : include, link_with : cspftp_lib, dependencies: lib_deps)
+
+
+# subdir('apm')
+# subdir('tests')
 
 gen_doc = find_program('gen-sidoc', required: false)
 

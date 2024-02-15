@@ -5,7 +5,8 @@
 
 static void cspftp_server_run()
 {
-    csp_socket_t sock = {0};
+    static csp_socket_t sock = {0};
+    sock.opts = CSP_O_RDP;
     csp_bind(&sock, 7);
 
     /* Create a backlog of 1 connection */
@@ -35,6 +36,7 @@ static void cspftp_server_run()
             start_sending_data(&server_transfer_ctx);
         }
         csp_close(conn);
+        dbg_log("Done");
     }
 }
 
