@@ -32,7 +32,7 @@ int dtp_client_main(int argc, char *argv[]) {
         res = CSPFTP_ERR;
         goto get_out_please;
     }
-
+    optparse_del(parser);
     /* Check "argi" if positional args are needed*/
     dbg_enable_colors(opts.color);
 

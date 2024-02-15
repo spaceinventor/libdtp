@@ -153,6 +153,7 @@ extern cspftp_result start_receiving_data(cspftp_t *session)
                 break;
             }
         }
+        csp_socket_close(&socket);
     } else {
         result = CSPFTP_ERR;
     }
