@@ -40,7 +40,7 @@ static void cspftp_server_run()
     }
 }
 
-int dtp_server_main(int argc, char *argv[])
+int dtp_server_main()
 {
     cspftp_server_run();
     return 0;

@@ -7,8 +7,9 @@ int apm_init(void) {
 }
 
 int dtp_server(struct slash *s) {
-    extern int dtp_server_main(int argc, char *argv[]);
-    return dtp_server_main(s->argc, s->argv);
+    extern int dtp_server_main();
+    (void) s;
+    return dtp_server_main();
 }
 
-slash_command(dtp_server, dtp_server, "asdawd", "DTP server");
+slash_command(dtp_server, dtp_server, "", "DTP server");

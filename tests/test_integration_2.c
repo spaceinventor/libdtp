@@ -1,4 +1,3 @@
-// #define _GNU_SOURCE // nanosleep
 #define _DEFAULT_SOURCE
 #define _XOPEN_SOURCE 500
 #define _GNU_SOURCE
@@ -77,9 +76,8 @@ void tearDown()
 REGISTER_TEST(inter_process_transfer)
 {
 	if (csh_available) {
-		extern int dtp_client_main(int argc, char *argv[]);
-		char *cmd_line = "csh -i conf/dtp_client.csh";
-		sleep(2);
+		char *cmd_line = "csh -i conf/dtp_client.csh \"dtp_client -s 3\"";
+		sleep(1);
 		int res = system(cmd_line);
 		kill(server_pid, 9);
 		kill(zmqproxy_pid, 9);

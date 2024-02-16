@@ -1,4 +1,3 @@
-// #define _GNU_SOURCE // nanosleep
 #include <time.h>
 #include <unistd.h>
 #define __USE_GNU
@@ -8,12 +7,12 @@
 #include "unity_test_utils.h"
 
 
-extern int dtp_server_main(int argc, char *argv[]);
+extern int dtp_server_main();
 void client(void);
 
 static void *server()
 {
-	dtp_server_main(0, NULL);
+	dtp_server_main();
 	return NULL;
 }
 
@@ -66,8 +65,8 @@ void tearDown() {
 }
 
 REGISTER_TEST(in_process_transfer) {
-	extern int dtp_client_main(int argc, char *argv[]);
-	TEST_ASSERT(0 == dtp_client_main(0, NULL));
+	extern int dtp_client_main(uint32_t server);
+	TEST_ASSERT(0 == dtp_client_main(0));
 }
 
 int main(int argc, const char *argv[])
