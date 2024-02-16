@@ -6,8 +6,8 @@
 
 typedef struct segment_t segment_t;
 typedef struct segment_t {
-    uint16_t start;
-    uint16_t end;
+    uint32_t start;
+    uint32_t end;
     struct segment_t *next;
 } segment_t;
 typedef segment_t segments_t;
@@ -17,16 +17,6 @@ static segments_t *segments = 0;
 static segment_t *cur_segment = 0;
 static uint32_t nof_segments = 0;
 static bool started = false;
-
-static void free_segments() {
-    segment_t *runner  = segments;
-    segment_t *tmp;
-    while(runner) {
-        tmp = runner;
-        runner = runner->next;
-        free(tmp);
-    }
-}
 
 static void append_segment(segment_t *s) {
     segment_t *runner = segments;
@@ -76,8 +66,6 @@ void close_segments(uint32_t received) {
     if(cur_segment) {
         append_segment(cur_segment);
     }
-    print_segments();
-    free_segments();
 }
 
 void print_segments() {
@@ -91,4 +79,23 @@ void print_segments() {
 
 uint32_t get_nof_segments(uint32_t expected) {
     return nof_segments;
+}
+
+void free_segments() {
+    segment_t *runner  = segments;
+    segment_t *tmp;
+    while(runner) {
+        tmp = runner;
+        runner = runner->next;
+        free(tmp);
+    }
+}
+
+void for_each_segment(void (*cb)(uint32_t idx, uint32_t start, uint32_t end, void *cb_ctx), void *cb_ctx) {
+    segment_t *runner  = segments;
+    uint32_t i = 0;
+    while(runner) {
+        cb(i, runner->start, runner->end, cb_ctx);
+        runner = runner->next;
+    }
 }

@@ -31,6 +31,16 @@ extern uint32_t get_nof_segments();
  */
 extern void print_segments();
 
+/**
+ * Release memory allocated for segments
+ */
+extern void free_segments();
+
+/**
+ * Call the given cb function for each segment, with the segment start and end packet
+ */
+extern void for_each_segment(void (*cb)(uint32_t idx, uint32_t start, uint32_t end, void *cb_ctx), void *cb_ctx);
+
 #ifdef __cplusplus
 }
 #endif

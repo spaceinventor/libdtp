@@ -34,7 +34,8 @@ int dtp_client_main(uint32_t server) {
     
     }
     res = cspftp_start_transfer(session);
-    if (CSPFTP_OK != res) {
+    cspftp_serialize_session_to_file(session, "dtp_session.json");
+    if (CSPFTP_OK != res) {        
         goto get_out_please;    
     }
 get_out_please:

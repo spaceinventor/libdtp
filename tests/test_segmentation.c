@@ -37,6 +37,8 @@ REGISTER_TEST(segmentation)
         }
     }
     close_segments(i);
+    print_segments();
+    free_segments();
     TEST_ASSERT(get_nof_segments() == 3);
 }
 

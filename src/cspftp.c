@@ -4,6 +4,7 @@
 #include "cspftp/cspftp.h"
 #include "cspftp_protocol.h"
 #include "cspftp_session.h"
+#include "segments_utils.h"
 #include <csp/csp.h>
 
 /**
@@ -161,6 +162,23 @@ cspftp_result cspftp_serialize_session(cspftp_t *session, vmem_t *dest)
 
 cspftp_result cspftp_deserialize_session(cspftp_t *session, vmem_t *src)
 {
+    return CSPFTP_OK;
+}
+
+#include <stdio.h>
+static void write_segment_to_file(uint32_t idx, uint32_t start, uint32_t end, void *ctx) {
+    FILE *output = (FILE *)ctx;
+    fprintf(output, "segment #%u, start: %u, end: %u\n", idx, start, end);
+}
+
+cspftp_result cspftp_serialize_session_to_file(cspftp_t *session, const char *file_name) {
+    FILE *output = fopen(file_name, "wb");
+    if (output) {
+        fprintf(output, "received: %u\n", session->bytes_received);
+        fprintf(output, "total: %u\n", session->total_bytes);
+        for_each_segment(write_segment_to_file, output);
+        fclose(output);
+    }
     return CSPFTP_OK;
 }
 

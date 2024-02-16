@@ -117,13 +117,25 @@ extern "C"
      * A serialized CSPFTP session can be read back as a valid session using the counterpart cspftp_deserialize_session() function.
      * 
      * @param[in] session pointer to a valid session object
-     * @param[in] dst to a vmem_t object the session will be serialized to
+     * @param[in] dst pointer to a vmem_t object the session will be serialized to
      * 
      * @return CSPFTP_OK in serialization completed, else CSPFTP_ERR, see csftp_errno()
      *
      */
     cspftp_result cspftp_serialize_session(cspftp_t *session, vmem_t *dst);
 
+    /**
+     * Serialize a CSPFTP session using the given destination VMEM object
+     * 
+     * A serialized CSPFTP session can be read back as a valid session using the counterpart cspftp_deserialize_session() function.
+     * 
+     * @param[in] session pointer to a valid session object
+     * @param[in] file_name filename the session will be serialized to
+     * 
+     * @return CSPFTP_OK in serialization completed, else CSPFTP_ERR, see csftp_errno()
+     *
+     */
+    cspftp_result cspftp_serialize_session_to_file(cspftp_t *session, const char *file_name);
     /**
      * Deserialize a CSPFTP session using the given source VMEM
      * 
