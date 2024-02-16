@@ -133,7 +133,12 @@ extern cspftp_result start_receiving_data(cspftp_t *session)
     csp_socket_t sock = { .opts = CSP_SO_CONN_LESS };
     csp_socket_t *socket = &sock;
     socket->opts = CSP_SO_CONN_LESS;
-
+    segments_ctx_t *segments = init_segments_ctx(); 
+    if (0 == segments) {
+        session->errno = CSPFTP_MALLOC_FAILED;
+        return CSPFTP_ERR;
+    }
+    session->segments = segments;
     dbg_log("Start receiving data");
     csp_listen(socket, 1);
     if(CSP_ERR_NONE == csp_bind(socket, 8)) {
@@ -149,7 +154,7 @@ extern cspftp_result start_receiving_data(cspftp_t *session)
             idle_ms = 0;
             session->bytes_received += packet->length;
             packet_seq = packet->data32[0] / packet->length;
-            if (false == update_segments(packet_seq)) {
+            if (false == update_segments(segments, packet_seq)) {
                 dbg_warn("Couldn't update segment informations, that's not good:(");
             }
             current_seq++;            
@@ -162,7 +167,7 @@ extern cspftp_result start_receiving_data(cspftp_t *session)
             dbg_warn("No data received for %u ms, bailing out", idle_ms);
         }
         csp_socket_close(socket);
-        close_segments(packet_seq);
+        close_segments(segments);
     } else {
         result = CSPFTP_ERR;
     }

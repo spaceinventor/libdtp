@@ -32,6 +32,7 @@ extern "C"
         CSPFTP_ENOMORE_SESSIONS, //<! All static sessions in use
         CSPFTP_ESESSION_NOT_FOUND, //<! Given session not found
         CSPFTP_CONNECTION_FAILED, //<! Connecting to the server failed, for some rease
+        CSPFTP_MALLOC_FAILED, //<! Could not allocate a mandatory piece of memory
         CSPFTP_NOT_IMPLEMENTED, //<! Still under construction, sorry
         CSPFTP_LAST_ERR
     } cspftp_errno_t;

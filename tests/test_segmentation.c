@@ -11,8 +11,8 @@ void tearDown()
 {
 }
 
-REGISTER_TEST(segmentation)
-{
+static segments_ctx_t *generate_test_segments() {
+    segments_ctx_t *ctx = init_segments_ctx();
     uint16_t missing_packets[] = {
         256,
         257,
@@ -30,16 +30,28 @@ REGISTER_TEST(segmentation)
             if (i == missing_packets[cur_missing_packet]) {
                 cur_missing_packet++;
             } else {
-                update_segments(i);
+                update_segments(ctx, i);
             }
         } else {
-            update_segments(i);
+            update_segments(ctx, i);
         }
     }
-    close_segments(i);
-    print_segments();
-    free_segments();
-    TEST_ASSERT(get_nof_segments() == 3);
+    close_segments(ctx);
+    return ctx;
+}
+
+REGISTER_TEST(segmentation)
+{
+    segments_ctx_t *ctx = generate_test_segments();
+    print_segments(ctx);
+    TEST_ASSERT(get_nof_segments(ctx) == 3);
+    free_segments(ctx);
+
+}
+
+REGISTER_TEST(compute_complement_segments) {
+    segments_ctx_t *ctx = generate_test_segments();
+    free_segments(ctx);
 }
 
 int main(int argc, const char *argv[])

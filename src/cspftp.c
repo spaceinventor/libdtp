@@ -30,7 +30,9 @@ static const char *const _error_strs[] = {
     "No more static sessions available",
     "Not implemented", /* CSPFTP_NOT_IMPLEMENTED */
     "Could not connect", /* CSPFTP_CONNECTION_FAILED */
-    "Given session not found"};
+    "Could not allocate a mandatory piece of memory", /* CSPFTP_MALLOC_FAILED */
+    "Given session not found"
+};
 
 static_assert(CSPFTP_LAST_ERR <= sizeof(_error_strs) / sizeof(_error_strs[0]), "_error_strs does not have entries for all error codes");
 
@@ -68,7 +70,7 @@ cspftp_t *cspftp_acquire_session()
             session->bytes_received = 0;
             session->request_meta.nof_intervals = 1;
             session->request_meta.intervals[0].start = 0;
-             session->request_meta.intervals[0].end = 0xffffffff; /* interval 0-0xFFFFFFFF means the whole thing */
+            session->request_meta.intervals[0].end = 0xffffffff; /* interval 0-0xFFFFFFFF means the whole thing */
             last_error = CSPFTP_NO_ERR;
             return session;
         }
@@ -176,7 +178,7 @@ cspftp_result cspftp_serialize_session_to_file(cspftp_t *session, const char *fi
     if (output) {
         fprintf(output, "received: %u\n", session->bytes_received);
         fprintf(output, "total: %u\n", session->total_bytes);
-        for_each_segment(write_segment_to_file, output);
+        for_each_segment(session->segments, write_segment_to_file, output);
         fclose(output);
     }
     return CSPFTP_OK;

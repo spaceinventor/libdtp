@@ -14,6 +14,8 @@ extern "C"
 #include "cspftp/cspftp.h"
 #include "cspftp_protocol.h"
 
+    /* received segment type forward declaration*/
+    typedef struct segments_ctx_t segments_ctx_t;
     /**
      * @brief CSPFTP session, internal definition
      */
@@ -26,6 +28,7 @@ extern "C"
         uint32_t total_bytes;
         cspftp_errno_t errno;
         cspftp_meta_req_t request_meta;
+        segments_ctx_t *segments;
     } cspftp_t;
 
 #ifdef __cplusplus
