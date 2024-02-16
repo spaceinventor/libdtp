@@ -6,6 +6,7 @@
 #include "cspftp_protocol.h"
 #include "cspftp_log.h"
 #include "cspftp_session.h"
+#include "segments_utils.h"
 
 #define PKT_SIZE (190U)
 #define NOF_PACKETS (1024 )
@@ -148,12 +149,9 @@ extern cspftp_result start_receiving_data(cspftp_t *session)
             idle_ms = 0;
             session->bytes_received += packet->length;
             packet_seq = packet->data32[0] / packet->length;
-            update_segments(current_seq, packet_seq);
-            // if (current_seq != packet_seq) {
-            //     // dbg_warn("Break here, current_seq=%d, received_seq=%d", current_seq, (packet->data32[0] / PKT_SIZE));
-            // } else {                
-            dbg_log("Received %d bytes, counted_seq= %lu,  pkt_seq = %lu", session->bytes_received, current_seq, packet_seq);
-            // }
+            if (false == update_segments(packet_seq)) {
+                dbg_warn("Couldn't update segment informations, that's not good:(");
+            }
             current_seq++;            
             csp_buffer_free(packet);
             if (packet_seq == 1023) {
