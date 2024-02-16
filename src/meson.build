@@ -6,6 +6,7 @@ src = [
     'cspftp_protocol.c',
     'cspftp_server.c',
     'cspftp_client.c',
+    'segments_utils.c',
 ]
 
 csp_dep = subproject('csp').get_variable('csp_dep')

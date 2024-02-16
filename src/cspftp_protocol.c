@@ -148,11 +148,12 @@ extern cspftp_result start_receiving_data(cspftp_t *session)
             idle_ms = 0;
             session->bytes_received += packet->length;
             packet_seq = packet->data32[0] / packet->length;
-            if (current_seq != packet_seq) {
-                // dbg_warn("Break here, current_seq=%d, received_seq=%d", current_seq, (packet->data32[0] / PKT_SIZE));
-            } else {                
-                // dbg_log("Received %d bytes, seq = %lu", session->bytes_received, (packet->data32[0]) / PKT_SIZE);
-            }
+            update_segments(current_seq, packet_seq);
+            // if (current_seq != packet_seq) {
+            //     // dbg_warn("Break here, current_seq=%d, received_seq=%d", current_seq, (packet->data32[0] / PKT_SIZE));
+            // } else {                
+            dbg_log("Received %d bytes, counted_seq= %lu,  pkt_seq = %lu", session->bytes_received, current_seq, packet_seq);
+            // }
             current_seq++;            
             csp_buffer_free(packet);
             if (packet_seq == 1023) {
@@ -163,6 +164,7 @@ extern cspftp_result start_receiving_data(cspftp_t *session)
             dbg_warn("No data received for %u ms, bailing out", idle_ms);
         }
         csp_socket_close(socket);
+        close_segments(packet_seq);
     } else {
         result = CSPFTP_ERR;
     }
