@@ -73,10 +73,6 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
     const char dummy_payload[PKT_SIZE] = { 0x00 };
     uint32_t bytes_sent = 0;
     dbg_log("Start sending data");
-    struct timespec sleep_for = {
-        .tv_sec = 0,
-        .tv_nsec = 1000
-    };
     for(uint8_t i = 0; i < ctx->request.nof_intervals; i++)
     {
         uint32_t interval_start = ctx->request.intervals[i].start;
@@ -84,7 +80,6 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
         uint32_t bytes_in_interval = interval_stop - interval_start;
         uint32_t sent_in_interval = 0;
         while(sent_in_interval < bytes_in_interval) {
-            nanosleep(&sleep_for, NULL);
             packet = csp_buffer_get(0);
             if(NULL == packet) {
                 // Count maybe ?
@@ -134,20 +129,20 @@ extern cspftp_result start_receiving_data(cspftp_t *session)
     uint32_t current_seq = 0;
     uint32_t packet_seq = 0;
     uint32_t idle_ms = 0;
-    csp_socket_t *socket = malloc(sizeof(csp_socket_t));
+    csp_socket_t sock = { .opts = CSP_SO_CONN_LESS };
+    csp_socket_t *socket = &sock;
     socket->opts = CSP_SO_CONN_LESS;
 
     dbg_log("Start receiving data");
+    csp_listen(socket, 1);
     if(CSP_ERR_NONE == csp_bind(socket, 8)) {
-        csp_listen(socket, 1);
         while ((session->bytes_received < session->total_bytes) && (idle_ms < 6000))
         {
             packet = csp_recvfrom(socket, 1000);
             if(NULL == packet) {
-                idle_ms += 1;
+                idle_ms += 1000;
                 if (idle_ms % 1000 == 0)
                 dbg_warn("No data received for %u ms", idle_ms);
-                // Count maybe ?
                 continue;
             }
             idle_ms = 0;
@@ -168,10 +163,9 @@ extern cspftp_result start_receiving_data(cspftp_t *session)
             dbg_warn("No data received for %u ms, bailing out", idle_ms);
         }
         csp_socket_close(socket);
-        free(socket);
     } else {
         result = CSPFTP_ERR;
     }
-    dbg_log("Received %d bytes, status: %d", session->bytes_received, result);
+    dbg_log("Received %d bytes, expected: %d, status: %d", session->bytes_received, session->total_bytes, result);
     return result;
 }
