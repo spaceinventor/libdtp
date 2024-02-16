@@ -74,6 +74,39 @@ void close_segments(segments_ctx_t *ctx) {
     }
 }
 
+segments_ctx_t *get_complement_segment(segments_ctx_t *ctx) {
+    segments_ctx_t *complements = init_segments_ctx();
+    uint32_t start = 0;
+    uint32_t end = 0;
+    if(0 != ctx->segments) {
+        segment_t *runner  = ctx->segments;
+        while(runner) {
+            if(runner->start == 0) {
+                start = runner->end;
+                runner = runner->next;
+                continue;
+            } else if(start < runner->start) {
+                end = runner->start;
+                complements->cur_segment = malloc(sizeof(segment_t));
+                complements->cur_segment->start = start;
+                complements->cur_segment->end = end;
+                complements->cur_segment->next = 0;
+                append_segment(complements);
+                start = runner->end;
+            }
+            runner = runner->next;
+        }
+    }
+    if (end < start) {
+        complements->cur_segment = malloc(sizeof(segment_t));
+        complements->cur_segment->start = start;
+        complements->cur_segment->end = 0xffffffff;
+        complements->cur_segment->next = 0;
+        append_segment(complements);
+    }
+    return complements;
+}
+
 void print_segments(segments_ctx_t *ctx) {
     if(0 != ctx->segments) {
         segment_t *runner  = ctx->segments;

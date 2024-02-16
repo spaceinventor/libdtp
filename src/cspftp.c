@@ -90,6 +90,7 @@ cspftp_result cspftp_release_session(cspftp_t *session)
             last_error = static_sessions[i].session.errno;
             static_sessions[i].in_use = false;
             static_sessions[i].session.errno = CSPFTP_NO_ERR;
+            free_segments(session->segments);
             return CSPFTP_OK;
         }
     }

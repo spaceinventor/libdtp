@@ -51,7 +51,11 @@ REGISTER_TEST(segmentation)
 
 REGISTER_TEST(compute_complement_segments) {
     segments_ctx_t *ctx = generate_test_segments();
+    segments_ctx_t *complements = get_complement_segment(ctx);
+    TEST_ASSERT(get_nof_segments(ctx) == 3);
+    print_segments(complements);
     free_segments(ctx);
+    free_segments(complements);
 }
 
 int main(int argc, const char *argv[])

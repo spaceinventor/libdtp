@@ -31,12 +31,12 @@ int dtp_client_main(uint32_t server) {
     res = cspftp_set_opt(session, CSPFTP_LOCAL_CFG, &local_cfg);
     if (CSPFTP_OK != res) {
         goto get_out_please;
-    
+
     }
     res = cspftp_start_transfer(session);
     cspftp_serialize_session_to_file(session, "dtp_session.json");
-    if (CSPFTP_OK != res) {        
-        goto get_out_please;    
+    if (CSPFTP_OK != res) {
+        goto get_out_please;
     }
 get_out_please:
     cspftp_release_session(session);

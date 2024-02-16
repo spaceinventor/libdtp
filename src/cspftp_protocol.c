@@ -108,7 +108,7 @@ extern cspftp_result cspftp_start_transfer(cspftp_t *session)
         goto get_out;
     }
     session->conn = conn;
-    res = send_remote_meta_req(session);    
+    res = send_remote_meta_req(session);
     if (CSPFTP_OK != res)
     {
         goto get_out;
@@ -133,7 +133,7 @@ extern cspftp_result start_receiving_data(cspftp_t *session)
     csp_socket_t sock = { .opts = CSP_SO_CONN_LESS };
     csp_socket_t *socket = &sock;
     socket->opts = CSP_SO_CONN_LESS;
-    segments_ctx_t *segments = init_segments_ctx(); 
+    segments_ctx_t *segments = init_segments_ctx();
     if (0 == segments) {
         session->errno = CSPFTP_MALLOC_FAILED;
         return CSPFTP_ERR;
@@ -157,7 +157,7 @@ extern cspftp_result start_receiving_data(cspftp_t *session)
             if (false == update_segments(segments, packet_seq)) {
                 dbg_warn("Couldn't update segment informations, that's not good:(");
             }
-            current_seq++;            
+            current_seq++;
             csp_buffer_free(packet);
             if (packet_seq == 1023) {
                 break;
@@ -168,6 +168,12 @@ extern cspftp_result start_receiving_data(cspftp_t *session)
         }
         csp_socket_close(socket);
         close_segments(segments);
+        dbg_log("Received segments:");
+        print_segments(segments);
+        segments_ctx_t *complements = get_complement_segment(segments);
+        dbg_log("Missing segments:");
+        print_segments(complements);
+        free_segments(complements);
     } else {
         result = CSPFTP_ERR;
     }
