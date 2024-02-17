@@ -171,15 +171,26 @@ cspftp_result cspftp_deserialize_session(cspftp_t *session, vmem_t *src)
 #include <stdio.h>
 static void write_segment_to_file(uint32_t idx, uint32_t start, uint32_t end, void *ctx) {
     FILE *output = (FILE *)ctx;
-    fprintf(output, "segment #%u, start: %u, end: %u\n", idx, start, end);
+    (void) idx;
+    fprintf(output, "\n\t\t{ \"start\": %u, \"end\": %u },", start, end);
 }
 
 cspftp_result cspftp_serialize_session_to_file(cspftp_t *session, const char *file_name) {
     FILE *output = fopen(file_name, "wb");
     if (output) {
-        fprintf(output, "received: %u\n", session->bytes_received);
-        fprintf(output, "total: %u\n", session->total_bytes);
+        fprintf(output, "{\n\t\"received\": %u,\n", session->bytes_received);
+        fprintf(output, "\t\"total\": %u,\n", session->total_bytes);
+        fprintf(output, "\t\"segments_received\": [ ");
         for_each_segment(session->segments, write_segment_to_file, output);
+        fseek(output, -1, SEEK_CUR);
+        fprintf(output, "\n\t],\n");
+        fprintf(output, "\t\"segments_missing\": [ ");
+        segments_ctx_t *missing = get_complement_segment(session->segments);
+        for_each_segment(missing, write_segment_to_file, output);
+        free_segments(missing);
+        fseek(output, -1, SEEK_CUR);
+        fprintf(output, "\n\t]\n");
+        fprintf(output, "}\n");
         fclose(output);
     }
     return CSPFTP_OK;
