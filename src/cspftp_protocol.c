@@ -8,7 +8,10 @@
 #include "cspftp_session.h"
 
 #define PKT_SIZE (190U)
-#define NOF_PACKETS (1024 )
+
+const uint16_t CSPFTP_PACKET_SIZE = PKT_SIZE;
+
+#define NOF_PACKETS (1024)
 
 cspftp_server_transfer_ctx_t server_transfer_ctx;
 
@@ -18,7 +21,7 @@ csp_packet_t *setup_server_transfer(cspftp_server_transfer_ctx_t *ctx, uint16_t 
     ctx->destination = dst;
     if(ctx->request.nof_intervals == 1 && ctx->request.intervals[0].end == 0xFFFFFFFF) {
         // First request, client is asking for the whole thing, adjust to actual size to transfer
-        ctx->request.intervals[0].end = (uint32_t)(NOF_PACKETS * PKT_SIZE);
+        ctx->request.intervals[0].end = (uint32_t)(NOF_PACKETS * CSPFTP_PACKET_SIZE);
     }
     csp_buffer_free(request);
     result = csp_buffer_get(0);
@@ -27,7 +30,7 @@ csp_packet_t *setup_server_transfer(cspftp_server_transfer_ctx_t *ctx, uint16_t 
         result->length = sizeof(cspftp_meta_req_t);
         cspftp_meta_resp_t *meta_resp = (cspftp_meta_resp_t *)result->data;
         /* TODO: get size in bytes of the transfer from somewhere */
-        meta_resp->size_in_bytes = (uint32_t)(NOF_PACKETS * PKT_SIZE);
+        meta_resp->size_in_bytes = (uint32_t)(NOF_PACKETS * CSPFTP_PACKET_SIZE);
     }
     return result;
 }
@@ -85,8 +88,7 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
                 // Count maybe ?
                 continue;
             }
-            packet->length = PKT_SIZE;
-            // dbg_log("Sent %d bytes, seq = %lu", bytes_sent, bytes_sent / PKT_SIZE);
+            packet->length = CSPFTP_PACKET_SIZE;
             memcpy(packet->data, dummy_payload, sizeof(dummy_payload));
             memcpy(packet->data, &bytes_sent, sizeof(bytes_sent));
             bytes_sent += packet->length;
@@ -94,6 +96,6 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
             csp_sendto(CSP_PRIO_NORM, ctx->destination, 8, 0, 0, packet);
         }
     }
-    dbg_warn("Server transfer completed, sent %d bytes in %lu packets", bytes_sent, bytes_sent / PKT_SIZE);
+    dbg_warn("Server transfer completed, sent %d bytes in %lu packets", bytes_sent, bytes_sent / CSPFTP_PACKET_SIZE);
     return result;
 }

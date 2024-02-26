@@ -4,7 +4,7 @@
 		{
 			"type": "shell",
 			"label": "Meson build",
-			"command": "meson setup --reconfigure build --prefix=$HOME/.local --libdir=$HOME/.local/lib/csh && ninja -v -C build install",
+			"command": "meson setup build --prefix=$HOME/.local --libdir=$HOME/.local/lib/csh && ninja -v -C build install",
 			"args": [],
 			"options": {
 				"cwd": "${workspaceFolder}"

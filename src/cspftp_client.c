@@ -133,13 +133,13 @@ cspftp_result start_receiving_data(cspftp_t *session)
     dbg_log("Start receiving data");
     csp_listen(socket, 1);
     if(CSP_ERR_NONE == csp_bind(socket, 8)) {
-        while ((session->bytes_received < session->total_bytes) && (idle_ms < 6000))
+        while ((session->bytes_received < session->total_bytes) && (idle_ms < 6000) && packet_seq < ((session->total_bytes / CSPFTP_PACKET_SIZE) - 1))
         {
             packet = csp_recvfrom(socket, 1000);
             if(NULL == packet) {
                 idle_ms += 1000;
                 if (idle_ms % 1000 == 0)
-                dbg_warn("No data received for %u ms", idle_ms);
+                dbg_warn("No data received for %u ms, last packet_seq=%u", idle_ms, packet_seq);
                 continue;
             }
             idle_ms = 0;
@@ -152,7 +152,7 @@ cspftp_result start_receiving_data(cspftp_t *session)
             }
             current_seq++;
             csp_buffer_free(packet);
-            if (packet_seq == 1023) {
+            if (packet_seq == ((session->total_bytes / CSPFTP_PACKET_SIZE) - 1)) {
                 break;
             }
         }
