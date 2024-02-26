@@ -4,6 +4,7 @@
 #include "cspftp/cspftp.h"
 #include "cspftp_protocol.h"
 #include "cspftp_session.h"
+#include "cspftp_log.h"
 #include "segments_utils.h"
 #include <csp/csp.h>
 
@@ -36,11 +37,6 @@ static const char *const _error_strs[] = {
 
 static_assert(CSPFTP_LAST_ERR <= sizeof(_error_strs) / sizeof(_error_strs[0]), "_error_strs does not have entries for all error codes");
 
-/**
- * @brief Serialized session data version
- */
-static const uint32_t serializer_version = 1;
-
 #define CSPFTP_NOF_STATIC_SESSIONS 5
 static const uint8_t cspftp_nof_static_sessions = CSPFTP_NOF_STATIC_SESSIONS;
 static cspftp_static_session_t static_sessions[CSPFTP_NOF_STATIC_SESSIONS] = {0};
@@ -71,6 +67,10 @@ cspftp_t *cspftp_acquire_session()
             session->request_meta.nof_intervals = 1;
             session->request_meta.intervals[0].start = 0;
             session->request_meta.intervals[0].end = 0xffffffff; /* interval 0-0xFFFFFFFF means the whole thing */
+            cspftp_params default_params = {
+                .hooks = default_session_hooks
+            };
+            cspftp_set_opt(session, CSPFTP_SESSION_HOOKS_CFG, &default_params);
             last_error = CSPFTP_NO_ERR;
             return session;
         }
@@ -90,7 +90,9 @@ cspftp_result cspftp_release_session(cspftp_t *session)
             last_error = static_sessions[i].session.errno;
             static_sessions[i].in_use = false;
             static_sessions[i].session.errno = CSPFTP_NO_ERR;
-            free_segments(session->segments);
+            if(session->hooks.on_release) {
+                session->hooks.on_release(session);
+            }
             return CSPFTP_OK;
         }
     }
@@ -107,9 +109,14 @@ cspftp_result cspftp_set_opt(cspftp_t *session, cspftp_option option, cspftp_par
         session->remote_cfg.node = param->remote_cfg.node;
         break;
     }
-    case CSPFTP_LOCAL_CFG:
+    case CSPFTP_SESSION_HOOKS_CFG:
     {
-        session->local_cfg.vmem = param->local_cfg.vmem;
+        session->hooks.on_start = param->hooks.on_start;
+        session->hooks.on_data_packet = param->hooks.on_data_packet;
+        session->hooks.on_end = param->hooks.on_end;
+        session->hooks.on_release = param->hooks.on_release;
+        session->hooks.on_serialize = param->hooks.on_serialize;
+        session->hooks.on_deserialize = param->hooks.on_deserialize;
         break;
     }
     default:
@@ -127,9 +134,14 @@ cspftp_result cspftp_get_opt(cspftp_t *session, cspftp_option option, cspftp_par
         param->remote_cfg.node = session->remote_cfg.node;
         break;
     }
-    case CSPFTP_LOCAL_CFG:
+    case CSPFTP_SESSION_HOOKS_CFG:
     {
-        param->local_cfg.vmem = session->local_cfg.vmem;
+        param->hooks.on_start = session->hooks.on_start;
+        param->hooks.on_data_packet = session->hooks.on_data_packet;
+        param->hooks.on_end = session->hooks.on_end;
+        param->hooks.on_release = session->hooks.on_release;
+        param->hooks.on_serialize = session->hooks.on_serialize;
+        param->hooks.on_deserialize = session->hooks.on_deserialize;
         break;
     }
     default:
@@ -143,55 +155,18 @@ cspftp_result cspftp_stop_transfer(cspftp_t *session)
     return CSPFTP_OK;
 }
 
-cspftp_result cspftp_set_source(cspftp_t *session, vmem_t *src)
-{
-    return CSPFTP_OK;
-}
-
-cspftp_result cspftp_set_destination(cspftp_t *session, vmem_t *dest)
-{
-    return CSPFTP_OK;
-}
-
 cspftp_result cspftp_serialize_session(cspftp_t *session, vmem_t *dest)
 {
-    uint32_t offset = 0;
-    /* Write serialization version number first */
-    dest->write(dest, offset, &serializer_version, sizeof(serializer_version));
-    offset += sizeof(serializer_version);
-    (void) offset;
+    if(session->hooks.on_serialize) {
+        session->hooks.on_serialize(session, dest);
+    }
     return CSPFTP_OK;
 }
 
 cspftp_result cspftp_deserialize_session(cspftp_t *session, vmem_t *src)
 {
-    return CSPFTP_OK;
-}
-
-#include <stdio.h>
-static void write_segment_to_file(uint32_t idx, uint32_t start, uint32_t end, void *ctx) {
-    FILE *output = (FILE *)ctx;
-    (void) idx;
-    fprintf(output, "\n\t\t{ \"start\": %u, \"end\": %u },", start, end);
-}
-
-cspftp_result cspftp_serialize_session_to_file(cspftp_t *session, const char *file_name) {
-    FILE *output = fopen(file_name, "wb");
-    if (output) {
-        fprintf(output, "{\n\t\"received\": %u,\n", session->bytes_received);
-        fprintf(output, "\t\"total\": %u,\n", session->total_bytes);
-        fprintf(output, "\t\"segments_received\": [ ");
-        for_each_segment(session->segments, write_segment_to_file, output);
-        fseek(output, -1, SEEK_CUR);
-        fprintf(output, "\n\t],\n");
-        fprintf(output, "\t\"segments_missing\": [ ");
-        segments_ctx_t *missing = get_complement_segment(session->segments);
-        for_each_segment(missing, write_segment_to_file, output);
-        free_segments(missing);
-        fseek(output, -1, SEEK_CUR);
-        fprintf(output, "\n\t]\n");
-        fprintf(output, "}\n");
-        fclose(output);
+    if(session->hooks.on_deserialize) {
+        session->hooks.on_deserialize(session, src);
     }
     return CSPFTP_OK;
 }

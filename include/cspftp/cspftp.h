@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <vmem/vmem.h>
+#include <csp/csp.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -48,49 +49,74 @@ extern "C"
     /** The options pertaining to a CSPFTP session */
     typedef enum {
         CSPFTP_REMOTE_CFG = 1 << 0,
-        CSPFTP_LOCAL_CFG = 1 << 1,
+        CSPFTP_SESSION_HOOKS_CFG = 1 << 1,
         CSPFTP_OPT_3 = 1 << 2,
         CSPFTP_OPT_4 = 1 << 3,
     } cspftp_option;
 
     /**
-     * gettable/settable parameters for option 1
+     * configuration - DTP server CSP node address
      */
     typedef struct {
         uint16_t node;
     } cspftp_opt_remote_cfg;
 
-    typedef struct {
-        vmem_t *vmem;
-    } cspftp_opt_local_cfg;
     /**
-     * gettable/settable parameters for option 2
-     */
+     * configuration - DTP session hooks
+     */    
     typedef struct {
-    } cspftp_opt_2;
+        /** 
+         * Called when session is about to start
+         * @param session the current session
+         */
+        void (*on_start)(cspftp_t *session);
+        /** 
+         * Called whenever a data packet is received
+         * @param session the current session
+         * @param packet the freshly received data packet
+         * 
+         * @return false -> interrupt the transfer, true -> carry on
+         */
+        bool (*on_data_packet)(cspftp_t *session, csp_packet_t *packet);
+        /** 
+         * Called when session is done (for whatever reason, see cspftp_errno())
+         * @param session the current session
+         */        
+        void (*on_end)(cspftp_t *session);
 
-    /**
-     * gettable/settable parameters for option 3
-     */
-    typedef struct {
-    } cspftp_opt_3;
+        /** 
+         * Called when session is being released (about to be destroyed), allows custom clean up
+         * @param session the current session
+         */        
+        void (*on_release)(cspftp_t *session);
 
-    /**
-     * gettable/settable parameters for option 4
-     */
-    typedef struct {
-    } cspftp_opt_4;
+        /** 
+         * Called when session is serialized, allows complete customization of serialization.
+         * @param session the current session
+         * @param output destination for serialization (might be a vmem * IF that's enough?)
+         */        
+        void (*on_serialize)(cspftp_t *session, vmem_t *output);
 
+        /** 
+         * Called when session is deserialized, allows complete customization of de-serialization.
+         * @param session the current session
+         * @param input source for deserialization (might be a vmem * IF that's enough?)
+         */        
+        void (*on_deserialize)(cspftp_t *session, vmem_t *input);
+
+        void *hook_ctx;
+    } cspftp_opt_session_hooks_cfg;
+
+    
+    /** Default session hooks, define this variable if you want your own implementation */
+    extern const cspftp_opt_session_hooks_cfg default_session_hooks;
 
     /**
      * All gettable/settable parameter types for a session
      */
     typedef union {
         cspftp_opt_remote_cfg remote_cfg;
-        cspftp_opt_local_cfg local_cfg;
-        cspftp_opt_2 opt_2;
-        cspftp_opt_3 opt_3;
-        cspftp_opt_4 opt_4;
+        cspftp_opt_session_hooks_cfg hooks;
     } cspftp_params;
 
 /*
@@ -125,18 +151,6 @@ extern "C"
      */
     cspftp_result cspftp_serialize_session(cspftp_t *session, vmem_t *dst);
 
-    /**
-     * Serialize a CSPFTP session using the given destination VMEM object
-     * 
-     * A serialized CSPFTP session can be read back as a valid session using the counterpart cspftp_deserialize_session() function.
-     * 
-     * @param[in] session pointer to a valid session object
-     * @param[in] file_name filename the session will be serialized to
-     * 
-     * @return CSPFTP_OK in serialization completed, else CSPFTP_ERR, see csftp_errno()
-     *
-     */
-    cspftp_result cspftp_serialize_session_to_file(cspftp_t *session, const char *file_name);
     /**
      * Deserialize a CSPFTP session using the given source VMEM
      * 
@@ -200,22 +214,6 @@ extern "C"
      * @return CSPFTP_OK if session was stopped sucessfully, or CSPFTP_ERR in case of failure, see csftp_errno()
      */
     cspftp_result cspftp_stop_transfer(cspftp_t *session);
-
-    /**
-     * @brief 
-     * @param session 
-     * @param src 
-     * @return 
-     */
-    cspftp_result cspftp_set_source(cspftp_t *session, vmem_t *src);
-
-    /**
-     * @brief 
-     * @param session 
-     * @param dst 
-     * @return 
-     */
-    cspftp_result cspftp_set_destination(cspftp_t *session, vmem_t *dst);
 
 /*
 #pragma endregion

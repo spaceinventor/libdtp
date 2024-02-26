@@ -5,9 +5,62 @@
 #include <vmem/vmem_ram.h>
 
 #include "cspftp/cspftp.h"
+#include "cspftp_session.h"
 #include "cspftp_log.h"
+#include "segments_utils.h"
 
-int dtp_client_main(uint32_t server) {
+/**
+ * Default session hooks
+ */
+
+static void default_on_session_start(cspftp_t *session);
+static bool default_on_data_packet(cspftp_t *session, csp_packet_t *p);
+static void default_on_session_end(cspftp_t *session);
+static void default_on_serialize(cspftp_t *session, vmem_t *output);
+static void default_on_deserialize(cspftp_t *session, vmem_t *input);
+static void default_on_session_release(cspftp_t *session);
+
+__attribute__((__weak__)) const cspftp_opt_session_hooks_cfg default_session_hooks = {
+    .on_start = default_on_session_start,
+    .on_data_packet = default_on_data_packet,
+    .on_end = default_on_session_end,
+    .on_serialize = default_on_serialize,
+    .on_deserialize = default_on_deserialize,
+    .on_release = default_on_session_release,
+};
+
+static void default_on_session_start(cspftp_t *session) {
+    dbg_log("Default on_start hook");
+    (void)session;
+}
+static bool default_on_data_packet(cspftp_t *session, csp_packet_t *packet) {
+    dbg_log("Default on_data_packet hook");
+    (void)session;
+    (void)packet;
+    return true;
+}
+static void default_on_session_end(cspftp_t *session) {
+    dbg_log("Default on_end hook");
+    (void)session;
+}
+
+static void default_on_serialize(cspftp_t *session, vmem_t *output) {
+    dbg_log("Default on_serialize hook");
+    (void)session;
+    (void)output;
+}
+
+static void default_on_deserialize(cspftp_t *session, vmem_t *input) {
+    dbg_log("Default on_deserialize hook");
+    (void)session;
+    (void)input;
+}
+static void default_on_session_release(cspftp_t *session) {
+    dbg_log("Default on_release hook");
+    (void)session;
+}
+
+int dtp_client_main(uint32_t server, cspftp_t **out_session) {
     cspftp_t *session = NULL;
     cspftp_result res = CSPFTP_OK;
 
@@ -27,19 +80,92 @@ int dtp_client_main(uint32_t server) {
         goto get_out_please;
     }
 
-    cspftp_params local_cfg = { .local_cfg.vmem = 0 };
-    res = cspftp_set_opt(session, CSPFTP_LOCAL_CFG, &local_cfg);
-    if (CSPFTP_OK != res) {
-        goto get_out_please;
-
-    }
     res = cspftp_start_transfer(session);
-    cspftp_serialize_session_to_file(session, "dtp_session.json");
-    if (CSPFTP_OK != res) {
-        goto get_out_please;
-    }
 get_out_please:
-    cspftp_release_session(session);
+    if (CSPFTP_OK == res && 0 != out_session) {
+        /* Give session responsibility to caller, they wants it */
+        *out_session = session;
+    } else {
+        cspftp_release_session(session);
+    }
     dbg_log("Bye...");
     return res;
+}
+
+cspftp_result cspftp_start_transfer(cspftp_t *session)
+{
+    cspftp_result res = CSPFTP_ERR;
+    csp_conn_t *conn = csp_connect(CSP_PRIO_HIGH, session->remote_cfg.node, 7, 5, CSP_O_RDP);
+    if (NULL == conn) {
+        session->errno = CSPFTP_CONNECTION_FAILED;
+        goto get_out;
+    }
+    session->conn = conn;
+    res = send_remote_meta_req(session);
+    if (CSPFTP_OK != res)
+    {
+        goto get_out;
+    }
+    res = read_remote_meta_resp(session);
+    if (CSPFTP_OK != res)
+    {
+        goto get_out;
+    }
+    res = start_receiving_data(session);
+get_out:
+    return res;
+}
+
+cspftp_result start_receiving_data(cspftp_t *session)
+{
+    cspftp_result result = CSPFTP_OK;
+    csp_packet_t *packet;
+    uint32_t current_seq = 0;
+    uint32_t packet_seq = 0;
+    uint32_t idle_ms = 0;
+    csp_socket_t sock = { .opts = CSP_SO_CONN_LESS };
+    csp_socket_t *socket = &sock;
+    socket->opts = CSP_SO_CONN_LESS;
+
+    if(session->hooks.on_start) {
+        session->hooks.on_start(session);
+    }
+    dbg_log("Start receiving data");
+    csp_listen(socket, 1);
+    if(CSP_ERR_NONE == csp_bind(socket, 8)) {
+        while ((session->bytes_received < session->total_bytes) && (idle_ms < 6000))
+        {
+            packet = csp_recvfrom(socket, 1000);
+            if(NULL == packet) {
+                idle_ms += 1000;
+                if (idle_ms % 1000 == 0)
+                dbg_warn("No data received for %u ms", idle_ms);
+                continue;
+            }
+            idle_ms = 0;
+            session->bytes_received += packet->length;
+            packet_seq = packet->data32[0] / packet->length;
+            if(session->hooks.on_data_packet) {
+                if (false == session->hooks.on_data_packet(session, packet)) {
+                   dbg_warn("on_data_packet() hooks return flase, (TBD: aborting)"); 
+                }
+            }
+            current_seq++;
+            csp_buffer_free(packet);
+            if (packet_seq == 1023) {
+                break;
+            }
+        }
+        if (idle_ms > 6000) {
+            dbg_warn("No data received for %u ms, bailing out", idle_ms);
+        }
+        csp_socket_close(socket);
+        if(session->hooks.on_end) {
+            session->hooks.on_end(session);
+        }
+    } else {
+        result = CSPFTP_ERR;
+    }
+    dbg_log("Received %d bytes, expected: %d, status: %d", session->bytes_received, session->total_bytes, result);
+    return result;
 }

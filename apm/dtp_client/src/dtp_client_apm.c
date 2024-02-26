@@ -1,13 +1,117 @@
 #include <stdio.h>
 #include <apm/apm.h>
+#include <vmem/vmem_file.h>
 #include <slash/slash.h>
 #include <slash/optparse.h>
 #include "cspftp/cspftp.h"
+#include "segments_utils.h"
+#include "cspftp_log.h"
+#include "cspftp_session.h"
+
+static void default_on_start(cspftp_t *session);
+static bool default_on_data_packet(cspftp_t *session, csp_packet_t *p);
+static void default_on_end(cspftp_t *session);
+static void default_on_serialize(cspftp_t *session, vmem_t *output);
+static void default_on_deserialize(cspftp_t *session, vmem_t *input);
+static void default_on_release(cspftp_t *session);
+
+__attribute__((__weak__)) const cspftp_opt_session_hooks_cfg default_session_hooks = {
+    .on_start = default_on_start,
+    .on_data_packet = default_on_data_packet,
+    .on_end = default_on_end,
+    .on_serialize = default_on_serialize,
+    .on_deserialize = default_on_deserialize,
+    .on_release = default_on_release
+};
+
+static void default_on_start(cspftp_t *session) {
+    segments_ctx_t *segments = init_segments_ctx();
+    session->hooks.hook_ctx = segments;
+}
+
+static bool default_on_data_packet(cspftp_t *session, csp_packet_t *packet) {
+    segments_ctx_t *segments = (segments_ctx_t *)session->hooks.hook_ctx;
+    uint32_t packet_seq = packet->data32[0] / packet->length;
+    return update_segments(segments, packet_seq);
+}
+
+typedef struct {
+    vmem_t *output;
+    uint32_t *offset;
+} _anon;
+
+
+static char line_buf[128] = { 0 };
+static void write_segment_to_file(uint32_t idx, uint32_t start, uint32_t end, void *ctx) {
+    uint32_t cur_len;
+    _anon *out = (_anon *)ctx;
+    cur_len = snprintf(line_buf, 128, "\n\t\t{ \"start\": %u, \"end\": %u },", start, end);
+    out->output->write(out->output, *(out->offset), line_buf, cur_len);
+    *(out->offset) += cur_len;
+}
+
+static void default_on_end(cspftp_t *session) {
+    segments_ctx_t *segments = (segments_ctx_t *)session->hooks.hook_ctx;
+    close_segments(segments);
+    dbg_log("Received segments:");
+    print_segments(segments);
+    segments_ctx_t *complements = get_complement_segment(segments);
+    dbg_log("Missing segments:");
+    print_segments(complements);
+    // dbg_log("Serializing session...");
+    // cspftp_serialize_session_to_file(session, "dtp_session.json");
+    dbg_log("Done");
+    free_segments(complements);
+}
+
+static void default_on_release(cspftp_t *session) {
+    segments_ctx_t *segments = (segments_ctx_t *)session->hooks.hook_ctx;
+    free_segments(segments);
+}
+
+static void default_on_serialize(cspftp_t *session, vmem_t *output) {
+    uint32_t offset = 0;
+    uint32_t cur_len;
+    cur_len = snprintf(line_buf, 128, "{\n\t\"received\": %u,\n", session->bytes_received);
+    output->write(output, offset, line_buf, cur_len);
+    offset += cur_len;
+
+    cur_len = snprintf(line_buf, 128, "\t\"total\": %u,\n", session->total_bytes);
+    output->write(output, offset, line_buf, cur_len);
+    offset += cur_len;
+    segments_ctx_t *segments = (segments_ctx_t *)session->hooks.hook_ctx;
+    cur_len = snprintf(line_buf, 128, "\t\"segments_received\": [ ");
+    output->write(output, offset, line_buf, cur_len);
+    offset += cur_len;
+
+    _anon ctx = {
+        .output = output,
+        .offset = &offset
+    };
+    for_each_segment(segments, write_segment_to_file, &ctx);
+    offset--; /* backtrack to the last comma */
+    cur_len = snprintf(line_buf, 128, "\n\t],\n\t\"segments_missing\": [ ");
+    output->write(output, offset, line_buf, cur_len);
+    offset += cur_len;
+    segments_ctx_t *missing = get_complement_segment(segments);
+    for_each_segment(missing, write_segment_to_file, &ctx);
+    free_segments(missing);
+    offset--; /* backtrack to the last comma */
+    cur_len = snprintf(line_buf, 128, "\n\t]\n}\n");
+    output->write(output, offset, line_buf, cur_len);
+}
+
+static void default_on_deserialize(cspftp_t *session, vmem_t *input) {
+    (void)session;
+    (void)input;
+}
 
 int apm_init(void)
 {
     return 0;
 }
+
+VMEM_DEFINE_FILE(dtp_session, "dtp_session.json", "dtp_session.json", 1024*4);
 
 int dtp_client(struct slash *s)
 {
@@ -15,7 +119,7 @@ int dtp_client(struct slash *s)
         int color;
         uint32_t server;
     } dtp_client_opts_t;
-    extern int dtp_client_main(uint32_t server);
+    extern int dtp_client_main(uint32_t server, cspftp_t **session);
     dtp_client_opts_t opts = { 0 };
     optparse_t * parser = optparse_new("dtp_client", "<name>");
     optparse_add_help(parser);
@@ -29,7 +133,8 @@ int dtp_client(struct slash *s)
     }
 
     optparse_del(parser);
-    cspftp_result result = dtp_client_main(opts.server);
+    cspftp_t *session;
+    cspftp_result result = dtp_client_main(opts.server, &session);
     if (CSPFTP_ERR == result) {
         switch(cspftp_errno(NULL)) {
             case CSPFTP_EINVAL:
@@ -38,6 +143,9 @@ int dtp_client(struct slash *s)
                 printf("%s\n", cspftp_strerror(cspftp_errno(NULL)));
                 return SLASH_SUCCESS;
         }
+    } else {
+        cspftp_serialize_session(session, &vmem_dtp_session);
+        cspftp_release_session(session);
     }
     return SLASH_SUCCESS;
 }

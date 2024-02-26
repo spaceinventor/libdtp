@@ -6,7 +6,6 @@
 #include "cspftp_protocol.h"
 #include "cspftp_log.h"
 #include "cspftp_session.h"
-#include "segments_utils.h"
 
 #define PKT_SIZE (190U)
 #define NOF_PACKETS (1024 )
@@ -96,87 +95,5 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
         }
     }
     dbg_warn("Server transfer completed, sent %d bytes in %lu packets", bytes_sent, bytes_sent / PKT_SIZE);
-    return result;
-}
-
-extern cspftp_result cspftp_start_transfer(cspftp_t *session)
-{
-    cspftp_result res = CSPFTP_ERR;
-    csp_conn_t *conn = csp_connect(CSP_PRIO_HIGH, session->remote_cfg.node, 7, 5, CSP_O_RDP);
-    if (NULL == conn) {
-        session->errno = CSPFTP_CONNECTION_FAILED;
-        goto get_out;
-    }
-    session->conn = conn;
-    res = send_remote_meta_req(session);
-    if (CSPFTP_OK != res)
-    {
-        goto get_out;
-    }
-    res = read_remote_meta_resp(session);
-    if (CSPFTP_OK != res)
-    {
-        goto get_out;
-    }
-    res = start_receiving_data(session);
-get_out:
-    return res;
-}
-
-extern cspftp_result start_receiving_data(cspftp_t *session)
-{
-    cspftp_result result = CSPFTP_OK;
-    csp_packet_t *packet;
-    uint32_t current_seq = 0;
-    uint32_t packet_seq = 0;
-    uint32_t idle_ms = 0;
-    csp_socket_t sock = { .opts = CSP_SO_CONN_LESS };
-    csp_socket_t *socket = &sock;
-    socket->opts = CSP_SO_CONN_LESS;
-    segments_ctx_t *segments = init_segments_ctx();
-    if (0 == segments) {
-        session->errno = CSPFTP_MALLOC_FAILED;
-        return CSPFTP_ERR;
-    }
-    session->segments = segments;
-    dbg_log("Start receiving data");
-    csp_listen(socket, 1);
-    if(CSP_ERR_NONE == csp_bind(socket, 8)) {
-        while ((session->bytes_received < session->total_bytes) && (idle_ms < 6000))
-        {
-            packet = csp_recvfrom(socket, 1000);
-            if(NULL == packet) {
-                idle_ms += 1000;
-                if (idle_ms % 1000 == 0)
-                dbg_warn("No data received for %u ms", idle_ms);
-                continue;
-            }
-            idle_ms = 0;
-            session->bytes_received += packet->length;
-            packet_seq = packet->data32[0] / packet->length;
-            if (false == update_segments(segments, packet_seq)) {
-                dbg_warn("Couldn't update segment informations, that's not good:(");
-            }
-            current_seq++;
-            csp_buffer_free(packet);
-            if (packet_seq == 1023) {
-                break;
-            }
-        }
-        if (idle_ms > 6000) {
-            dbg_warn("No data received for %u ms, bailing out", idle_ms);
-        }
-        csp_socket_close(socket);
-        close_segments(segments);
-        dbg_log("Received segments:");
-        print_segments(segments);
-        segments_ctx_t *complements = get_complement_segment(segments);
-        dbg_log("Missing segments:");
-        print_segments(complements);
-        free_segments(complements);
-    } else {
-        result = CSPFTP_ERR;
-    }
-    dbg_log("Received %d bytes, expected: %d, status: %d", session->bytes_received, session->total_bytes, result);
     return result;
 }
