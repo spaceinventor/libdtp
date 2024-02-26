@@ -1,6 +1,5 @@
 #pragma once
 #include <stdbool.h>
-#include "cspftp/cspftp.h"
 
 #ifdef __cplusplus
 extern "C"
