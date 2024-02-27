@@ -3,7 +3,7 @@
 #include "cspftp_protocol.h"
 #include "cspftp_log.h"
 
-static void cspftp_server_run()
+static void cspftp_server_run(bool *keep_running)
 {
     static csp_socket_t sock = {0};
     sock.opts = CSP_O_RDP;
@@ -14,7 +14,7 @@ static void cspftp_server_run()
 
     /* Wait for connections and then process packets on the connection */
     dbg_log("Waiting for connection...");
-    while (1)
+    while (*keep_running)
     {
         /* Wait for a new connection, 10000 mS timeout */
         csp_conn_t *conn;
@@ -36,12 +36,12 @@ static void cspftp_server_run()
             start_sending_data(&server_transfer_ctx);
         }
         csp_close(conn);
-        dbg_log("Done");
     }
+    dbg_log("Bye");
 }
 
-int dtp_server_main()
+int dtp_server_main(bool *keep_running)
 {
-    cspftp_server_run();
+    cspftp_server_run(keep_running);
     return 0;
 }
