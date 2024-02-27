@@ -20,7 +20,7 @@ static void default_on_serialize(cspftp_t *session, vmem_t *output);
 static void default_on_deserialize(cspftp_t *session, vmem_t *input);
 static void default_on_session_release(cspftp_t *session);
 
-__attribute__((__weak__)) const cspftp_opt_session_hooks_cfg default_session_hooks = {
+const cspftp_opt_session_hooks_cfg default_session_hooks __attribute__((weak)) = {
     .on_start = default_on_session_start,
     .on_data_packet = default_on_data_packet,
     .on_end = default_on_session_end,
