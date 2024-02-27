@@ -7,7 +7,7 @@
 #include "segments_utils.h"
 #include "cspftp_session.h"
 #include "cspftp_log.h"
-#include <vmem/vmem_mmap.h>
+#include <vmem/vmem_file.h>
 #include "unity.h"
 #include "unity_test_utils.h"
 
@@ -69,7 +69,7 @@ void tearDown() {
 
 }
 
-VMEM_DEFINE_MMAP(dtp_test_session, "dtp_test_session.json", "dtp_test_session.json", 1024*4);
+VMEM_DEFINE_FILE(dtp_test_session, "dtp_test_session.json", "dtp_test_session.json", 1024*4);
 static void apm_on_start(cspftp_t *session);
 static bool apm_on_data_packet(cspftp_t *session, csp_packet_t *p);
 static void apm_on_end(cspftp_t *session);
@@ -169,7 +169,7 @@ static void apm_on_deserialize(cspftp_t *session, vmem_t *input) {
 REGISTER_TEST(in_process_transfer) {
 	cspftp_t *session;
 	TEST_ASSERT(0 == dtp_client_main(0, &session));
-	cspftp_serialize_session(session, &VMEM_MMAP_VAR(dtp_test_session));
+	cspftp_serialize_session(session, &vmem_dtp_test_session);
 }
 
 int main(int argc, const char *argv[])
