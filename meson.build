@@ -11,6 +11,9 @@ project('cspftp', 'c', subproject_dir: 'extern', version: '0.0.1', default_optio
 	'csp:rdp_max_window=1000',
 	'csp:port_max_bind=16',
 	'csp:use_rtable=true',
+  'param:have_fopen=true'
+  # NOTE: list_dynamic is only here because not having it prevents building with have_fopen...
+  'param:list_dynamic=true',
 ])
 # 	'csp:packet_padding_bytes=42', 
 # 	'csp:buffer_count=1000',
