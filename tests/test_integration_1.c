@@ -3,16 +3,17 @@
 #define __USE_GNU
 #include <pthread.h>
 #include <csp/csp.h>
+#include <cspftp/cspftp.h>
 #include "unity.h"
 #include "unity_test_utils.h"
 
 
-extern int dtp_server_main();
 void client(void);
 
 static void *server()
 {
-	dtp_server_main();
+    bool keep_running = true;
+	dtp_server_main(&keep_running);
 	return NULL;
 }
 
@@ -65,8 +66,8 @@ void tearDown() {
 }
 
 REGISTER_TEST(in_process_transfer) {
-	extern int dtp_client_main(uint32_t server);
-	TEST_ASSERT(0 == dtp_client_main(0));
+	cspftp_t *session;
+	TEST_ASSERT(0 == dtp_client_main(0, &session));
 }
 
 int main(int argc, const char *argv[])

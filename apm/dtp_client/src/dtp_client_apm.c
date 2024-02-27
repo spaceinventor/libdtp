@@ -119,7 +119,6 @@ int dtp_client(struct slash *s)
         int color;
         uint32_t server;
     } dtp_client_opts_t;
-    extern int dtp_client_main(uint32_t server, cspftp_t **session);
     dtp_client_opts_t opts = { 0 };
     optparse_t * parser = optparse_new("dtp_client", "<name>");
     optparse_add_help(parser);

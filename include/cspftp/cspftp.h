@@ -222,8 +222,11 @@ extern "C"
  */
 
 /*
-#pragma region Simplified Public API - TBD
+#pragma region Simplified Public API
  */
+    extern int dtp_server_main(bool *keep_running);
+    extern int dtp_client_main(uint32_t server, cspftp_t **session);
+
 /*
 #pragma endregion
  */

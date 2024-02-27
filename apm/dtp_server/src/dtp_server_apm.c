@@ -1,6 +1,7 @@
 #include <apm/apm.h>
 #include <slash/slash.h>
 #include <slash/optparse.h>
+#include <cspftp/cspftp.h>
 #define __USE_GNU
 #include <pthread.h>
 
@@ -37,7 +38,6 @@ static int run_in_thread(void *(*routine)(void *), const char *name)
 bool keep_running = true;
 
 void *wrapper(void *p) {
-    extern int dtp_server_main(bool *keep_running);
     dtp_server_main(&keep_running);
     return 0;
 }
