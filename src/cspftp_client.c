@@ -133,7 +133,9 @@ cspftp_result start_receiving_data(cspftp_t *session)
     dbg_log("Start receiving data");
     csp_listen(socket, 1);
     if(CSP_ERR_NONE == csp_bind(socket, 8)) {
-        while ((session->bytes_received < session->total_bytes) && (idle_ms < 6000) && packet_seq < ((session->total_bytes / (CSPFTP_PACKET_SIZE - sizeof(packet_seq)) - 1)))
+        const uint32_t payload_s = CSPFTP_PACKET_SIZE - sizeof(uint32_t);
+        uint32_t expected_nof_packets = compute_nof_packets(session->total_bytes, payload_s);
+        while ((session->bytes_received < session->total_bytes) && (idle_ms < 6000) && packet_seq < expected_nof_packets)
         {
             packet = csp_recvfrom(socket, 1000);
             if(NULL == packet) {
@@ -143,19 +145,15 @@ cspftp_result start_receiving_data(cspftp_t *session)
                 continue;
             }
             idle_ms = 0;
-            session->bytes_received += packet->length - sizeof(packet_seq);
-            packet_seq = packet->data32[0] / (packet->length - sizeof(packet_seq));
+            session->bytes_received += packet->length - sizeof(uint32_t);
+            packet_seq = packet->data32[0] / (CSPFTP_PACKET_SIZE - sizeof(uint32_t));
             if(session->hooks.on_data_packet) {
                 if (false == session->hooks.on_data_packet(session, packet)) {
-                   dbg_warn("on_data_packet() hooks return flase, (TBD: aborting)"); 
+                   dbg_warn("on_data_packet() hook return flase, (TBD: aborting)"); 
                 }
             }
             current_seq++;
             csp_buffer_free(packet);
-            if (packet_seq == ((session->total_bytes / (CSPFTP_PACKET_SIZE - sizeof(packet_seq)) - 1))) {
-                dbg_log("BLAReceived %lu bytes, expected: %lu, last seq: %lu, status: %d", session->bytes_received, session->total_bytes, current_seq, result);
-                break;
-            }
         }
         if (idle_ms > 6000) {
             dbg_warn("No data received for %u ms, bailing out", idle_ms);

@@ -93,7 +93,7 @@ static void apm_on_start(cspftp_t *session) {
 
 static bool apm_on_data_packet(cspftp_t *session, csp_packet_t *packet) {
     segments_ctx_t *segments = (segments_ctx_t *)session->hooks.hook_ctx;
-    uint32_t packet_seq = packet->data32[0] / packet->length;
+    uint32_t packet_seq = packet->data32[0] / (CSPFTP_PACKET_SIZE - sizeof(uint32_t));
     return update_segments(segments, packet_seq);
 }
 
@@ -115,13 +115,13 @@ static void write_segment_to_file(uint32_t idx, uint32_t start, uint32_t end, vo
 static void apm_on_end(cspftp_t *session) {
     segments_ctx_t *segments = (segments_ctx_t *)session->hooks.hook_ctx;
     close_segments(segments);
-    // dbg_log("Received segments:");
-    // print_segments(segments);
-    // segments_ctx_t *complements = get_complement_segment(segments);
-    // dbg_log("Missing segments:");
-    // print_segments(complements);
-    // dbg_log("Done");
-    // free_segments(complements);
+    dbg_log("Received segments:");
+    print_segments(segments);
+    segments_ctx_t *complements = get_complement_segment(segments);
+    dbg_log("Missing segments:");
+    print_segments(complements);
+    dbg_log("Done");
+    free_segments(complements);
 }
 
 static void apm_on_release(cspftp_t *session) {

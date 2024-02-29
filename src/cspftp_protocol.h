@@ -58,6 +58,14 @@ extern "C"
     extern cspftp_result send_remote_meta_req(cspftp_t *session);
     extern cspftp_result read_remote_meta_resp(cspftp_t *session);
     extern cspftp_result start_receiving_data(cspftp_t *session);
+
+    /**
+     * @brief Compute the number of CSP packets required to send total bytes
+     * @param total number of bytes to divide into CSP packets
+     * @param effective_payload_size number of payload bytes in one CSP packet
+     * @return integer number of CSP packets to use to send total bytes
+     */
+    extern uint32_t compute_nof_packets(uint32_t total, uint32_t effective_payload_size);
 #ifdef __cplusplus
 }
 #endif

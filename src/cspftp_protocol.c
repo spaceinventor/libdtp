@@ -21,7 +21,7 @@ static bool get_payload_meta(dftp_payload_meta_t *meta, uint8_t payload_id) {
         /* deliberate fallthrough for now */
         default:
             /* 128 Mb for testing */
-            meta->size = 128 *1024 * 1024; 
+            meta->size = 128 * 1024 * 1024;
         break;
     }
     return result;
@@ -56,11 +56,6 @@ csp_packet_t *setup_server_transfer(cspftp_server_transfer_ctx_t *ctx, uint16_t 
     }
 
     ctx->size_in_bytes = compute_transfer_size(ctx);
-
-    // if(ctx->request.nof_intervals == 1 && ctx->request.intervals[0].end == 0xFFFFFFFF) {
-    //     // First request, client is asking for the whole thing, adjust to actual size to transfer
-    //     ctx->request.intervals[0].end = ctx->payload_meta.size;
-    // }
 
     csp_buffer_free(request);
     result = csp_buffer_get(0);
@@ -114,6 +109,7 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
     // TODO: get payload data from somewhere
     const char dummy_payload[PKT_SIZE] = { 0x00 };
     uint32_t bytes_sent = 0;
+    uint32_t nof_csp_packets = 0;
     dbg_log("Start sending data");
     for(uint8_t i = 0; i < ctx->request.nof_intervals; i++)
     {
@@ -133,19 +129,31 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
                 dbg_warn("could not get packet to send");
                 continue;
             }
-            if((bytes_in_interval - sent_in_interval) > (CSPFTP_PACKET_SIZE - sizeof(bytes_sent))) {
+            if((bytes_in_interval - sent_in_interval) > (CSPFTP_PACKET_SIZE - sizeof(uint32_t))) {
                 packet->length = CSPFTP_PACKET_SIZE;
             } else {
-                packet->length = (bytes_in_interval - sent_in_interval) + sizeof(bytes_sent);
+                packet->length = (bytes_in_interval - sent_in_interval) + sizeof(uint32_t);
                 dbg_warn("last packet->length= %lu", packet->length);
             }
-            memcpy(packet->data, dummy_payload, sizeof(dummy_payload));
-            memcpy(packet->data, &bytes_sent, sizeof(bytes_sent));
-            bytes_sent += packet->length - sizeof(bytes_sent);
-            sent_in_interval += packet->length - sizeof(bytes_sent);
+            memcpy(packet->data, dummy_payload, sizeof(uint32_t));
+            memcpy(packet->data, &bytes_sent, sizeof(uint32_t));
+            bytes_sent += packet->length - sizeof(uint32_t);
+            sent_in_interval += packet->length - sizeof(uint32_t);
             csp_sendto(CSP_PRIO_NORM, ctx->destination, 8, 0, 0, packet);
+            nof_csp_packets++;
         }
     }
-    dbg_warn("Server transfer completed, sent %lu bytes in %lu packets", bytes_sent, bytes_sent / (CSPFTP_PACKET_SIZE  - sizeof(bytes_sent)));
+    dbg_warn("Server transfer completed, sent %lu bytes in %lu packets", bytes_sent, nof_csp_packets);
     return result;
+}
+
+uint32_t compute_nof_packets(uint32_t total, uint32_t effective_payload_size) {
+    const uint32_t payload_s = CSPFTP_PACKET_SIZE - sizeof(uint32_t);
+    uint32_t expected_nof_packets = total / effective_payload_size;
+
+    /* an extra packet will be needed for the remaining bytes */
+    if(total % effective_payload_size) {
+        expected_nof_packets++;
+    }
+    return expected_nof_packets;
 }

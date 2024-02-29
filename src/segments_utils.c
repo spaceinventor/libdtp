@@ -97,7 +97,7 @@ segments_ctx_t *get_complement_segment(segments_ctx_t *ctx) {
             runner = runner->next;
         }
     }
-    if (end < start) {
+    if (end != 0 && end < start) {
         complements->cur_segment = malloc(sizeof(segment_t));
         complements->cur_segment->start = start;
         complements->cur_segment->end = 0xffffffff;
