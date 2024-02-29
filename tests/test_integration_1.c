@@ -81,7 +81,7 @@ const cspftp_opt_session_hooks_cfg default_session_hooks = {
     .on_start = apm_on_start,
     .on_data_packet = apm_on_data_packet,
     .on_end = apm_on_end,
-    .on_serialize = apm_on_serialize,
+    // .on_serialize = apm_on_serialize,
     .on_deserialize = apm_on_deserialize,
     .on_release = apm_on_release
 };
@@ -115,13 +115,13 @@ static void write_segment_to_file(uint32_t idx, uint32_t start, uint32_t end, vo
 static void apm_on_end(cspftp_t *session) {
     segments_ctx_t *segments = (segments_ctx_t *)session->hooks.hook_ctx;
     close_segments(segments);
-    dbg_log("Received segments:");
-    print_segments(segments);
-    segments_ctx_t *complements = get_complement_segment(segments);
-    dbg_log("Missing segments:");
-    print_segments(complements);
-    dbg_log("Done");
-    free_segments(complements);
+    // dbg_log("Received segments:");
+    // print_segments(segments);
+    // segments_ctx_t *complements = get_complement_segment(segments);
+    // dbg_log("Missing segments:");
+    // print_segments(complements);
+    // dbg_log("Done");
+    // free_segments(complements);
 }
 
 static void apm_on_release(cspftp_t *session) {

@@ -22,19 +22,32 @@ extern "C"
     /** Transfer request */
     typedef struct
     {
-        uint8_t nof_intervals;
-        interval_t intervals[19];
+        uint8_t nof_intervals; /** Number of segments to transfer, see the intervals below */
+        uint8_t payload_id; /** Payload ID, conceptual identifer for the payload to retrieve, semantic is entirely server-specific */
+        interval_t intervals[19]; /** list of start-stop pairs to transfer, number is set by nof_intervals above */
     } cspftp_meta_req_t;
+
+    /**
+     * @brief Payload to transfer meta data (size, buffered access interfaces, etc)
+     */
+    typedef struct {
+        uint32_t size;
+    } dftp_payload_meta_t;
 
     typedef struct {
         uint16_t destination; /** Destination port */
         uint32_t size_in_bytes; /** total number of bytes to transfer */
         cspftp_meta_req_t request; /** List of intervals to transfer */
+        dftp_payload_meta_t payload_meta; /** Payload info, see dftp_payload_meta_t */
     } cspftp_server_transfer_ctx_t;
 
+    /**
+     * @brief CSP response sent from the server
+     */
     typedef struct
     {
-        uint32_t size_in_bytes;
+        uint32_t size_in_bytes; /** Total size of payload data to be sent during this transfer */
+        uint32_t total_payload_size; /** Total size of payload, for info (will be >= size_in_bytes) */
     } cspftp_meta_resp_t;
 
     extern cspftp_server_transfer_ctx_t server_transfer_ctx;

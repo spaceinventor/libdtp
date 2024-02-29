@@ -36,6 +36,7 @@ static void cspftp_server_run(bool *keep_running)
             start_sending_data(&server_transfer_ctx);
         }
         csp_close(conn);
+        dbg_log("Transfer done");
     }
     dbg_log("Bye");
 }
