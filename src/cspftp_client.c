@@ -166,6 +166,6 @@ cspftp_result start_receiving_data(cspftp_t *session)
     } else {
         result = CSPFTP_ERR;
     }
-    dbg_log("Received %d bytes, expected: %d, status: %d", session->bytes_received, session->total_bytes, result);
+    dbg_log("Received %lu bytes, expected: %lu, status: %d", session->bytes_received, session->total_bytes, result);
     return result;
 }
