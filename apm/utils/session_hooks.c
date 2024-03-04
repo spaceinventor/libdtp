@@ -32,7 +32,7 @@ static void apm_on_start(cspftp_t *session) {
 static bool apm_on_data_packet(cspftp_t *session, csp_packet_t *packet) {
     segments_ctx_t *segments = (segments_ctx_t *)session->hooks.hook_ctx;
     uint32_t packet_seq = packet->data32[0] / (CSPFTP_PACKET_SIZE - sizeof(uint32_t));
-    VMEM_MMAP_VAR(dtp_data).write(&VMEM_MMAP_VAR(dtp_data), packet_seq * (CSPFTP_PACKET_SIZE - sizeof(uint32_t)), &packet->data32[1], (packet->length - 1) / sizeof(uint32_t));
+    VMEM_MMAP_VAR(dtp_data).write(&VMEM_MMAP_VAR(dtp_data), packet_seq * (CSPFTP_PACKET_SIZE - sizeof(uint32_t)), &packet->data32[1], (packet->length - 1));
     return update_segments(segments, packet_seq);
 }
 
