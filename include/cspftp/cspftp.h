@@ -109,7 +109,7 @@ extern "C"
 
     
     /** Default session hooks, define this variable if you want your own implementation */
-    extern const cspftp_opt_session_hooks_cfg default_session_hooks;
+    extern cspftp_opt_session_hooks_cfg default_session_hooks;
 
     extern const uint16_t CSPFTP_PACKET_SIZE;
 
