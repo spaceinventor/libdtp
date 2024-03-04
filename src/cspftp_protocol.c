@@ -148,7 +148,6 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
 }
 
 uint32_t compute_nof_packets(uint32_t total, uint32_t effective_payload_size) {
-    const uint32_t payload_s = CSPFTP_PACKET_SIZE - sizeof(uint32_t);
     uint32_t expected_nof_packets = total / effective_payload_size;
 
     /* an extra packet will be needed for the remaining bytes */
