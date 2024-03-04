@@ -12,6 +12,7 @@ extern "C"
 #include <stdint.h>
 #include <csp/csp.h>
 #include "cspftp/cspftp.h"
+#include "cspftp/platform.h"
 
     /** Transfer inverval definition */
     typedef struct {
@@ -26,13 +27,6 @@ extern "C"
         uint8_t payload_id; /** Payload ID, conceptual identifer for the payload to retrieve, semantic is entirely server-specific */
         interval_t intervals[19]; /** list of start-stop pairs to transfer, number is set by nof_intervals above */
     } cspftp_meta_req_t;
-
-    /**
-     * @brief Payload to transfer meta data (size, buffered access interfaces, etc)
-     */
-    typedef struct {
-        uint32_t size;
-    } dftp_payload_meta_t;
 
     typedef struct {
         uint16_t destination; /** Destination port */

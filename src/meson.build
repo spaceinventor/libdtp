@@ -9,6 +9,7 @@ client_src = [
 ]
 server_src = [
     'cspftp_server.c',
+    'payload_api.c'
 ]
 
 csp_dep = subproject('csp').get_variable('csp_dep')

@@ -41,6 +41,97 @@ static void cspftp_server_run(bool *keep_running)
     dbg_log("Bye");
 }
 
+static uint32_t compute_transfer_size(cspftp_server_transfer_ctx_t *ctx) {
+    uint32_t size = 0;
+    interval_t *cur_int;
+    for (uint8_t i=0; i < ctx->request.nof_intervals; i++) {
+        cur_int = &ctx->request.intervals[i];
+        if(cur_int->end == 0xFFFFFFFF) {
+            /* This means the whole shebang */            
+            size = ctx->payload_meta.size;
+            cur_int->end = size;
+            break;
+        } else {
+            size += cur_int->end - cur_int->start;
+        }
+    }
+    return size;
+}
+
+#define PKT_SIZE (200U)
+
+static char dummy_payload[PKT_SIZE - sizeof(uint32_t)];
+
+extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
+{
+    cspftp_result result = CSPFTP_OK;
+    csp_packet_t *packet;
+    // TODO: get payload data from somewhere
+    uint32_t bytes_sent = 0;
+    uint32_t nof_csp_packets = 0;
+    memset(dummy_payload, 0x33, sizeof(dummy_payload));
+    dbg_log("Start sending data");
+    for(uint8_t i = 0; i < ctx->request.nof_intervals; i++)
+    {
+        uint32_t interval_start = ctx->request.intervals[i].start;
+        uint32_t interval_stop = ctx->request.intervals[i].end;
+        uint32_t bytes_in_interval = interval_stop - interval_start;
+        uint32_t sent_in_interval = 0;
+        uint32_t throttler = 0;
+        while(sent_in_interval < bytes_in_interval) {
+            if((throttler % 250) == 0) {
+                usleep(1000);
+            }
+            throttler++;
+            packet = csp_buffer_get(0);
+            if(NULL == packet) {
+                // Count maybe ?
+                dbg_warn("could not get packet to send");
+                continue;
+            }
+            if((bytes_in_interval - sent_in_interval) > (CSPFTP_PACKET_SIZE - sizeof(uint32_t))) {
+                packet->length = CSPFTP_PACKET_SIZE;
+            } else {
+                packet->length = (bytes_in_interval - sent_in_interval) + sizeof(uint32_t);
+                dbg_warn("last packet->length= %lu", packet->length);
+            }
+            memcpy(packet->data + sizeof(uint32_t), dummy_payload, sizeof(dummy_payload));
+            memcpy(packet->data, &bytes_sent, sizeof(uint32_t));
+            bytes_sent += packet->length - sizeof(uint32_t);
+            sent_in_interval += packet->length - sizeof(uint32_t);
+            csp_sendto(CSP_PRIO_NORM, ctx->destination, 8, 0, 0, packet);
+            nof_csp_packets++;
+        }
+    }
+    dbg_warn("Server transfer completed, sent %lu bytes in %lu packets", bytes_sent, nof_csp_packets);
+    return result;
+}
+
+csp_packet_t *setup_server_transfer(cspftp_server_transfer_ctx_t *ctx, uint16_t dst, csp_packet_t *request) {
+    csp_packet_t *result = 0;
+
+    memcpy(&(ctx->request), (cspftp_meta_req_t *)request->data, sizeof(cspftp_meta_req_t));
+    ctx->destination = dst;
+
+    /* Get the payload information */
+    if (false == get_payload_meta(&ctx->payload_meta, ctx->request.payload_id)) {
+        return result;
+    }
+
+    ctx->size_in_bytes = compute_transfer_size(ctx);
+
+    csp_buffer_free(request);
+    result = csp_buffer_get(0);
+    if (result) {
+        /* prepare the response */
+        result->length = sizeof(cspftp_meta_req_t);
+        cspftp_meta_resp_t *meta_resp = (cspftp_meta_resp_t *)result->data;
+        meta_resp->total_payload_size = ctx->payload_meta.size;
+        meta_resp->size_in_bytes = ctx->size_in_bytes;
+    }
+    return result;
+}
+
 int dtp_server_main(bool *keep_running)
 {
     cspftp_server_run(keep_running);
