@@ -60,16 +60,12 @@ static uint32_t compute_transfer_size(cspftp_server_transfer_ctx_t *ctx) {
 
 #define PKT_SIZE (200U)
 
-static char dummy_payload[PKT_SIZE - sizeof(uint32_t)];
-
 extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
 {
     cspftp_result result = CSPFTP_OK;
     csp_packet_t *packet;
-    // TODO: get payload data from somewhere
     uint32_t bytes_sent = 0;
     uint32_t nof_csp_packets = 0;
-    memset(dummy_payload, 0x33, sizeof(dummy_payload));
     dbg_log("Start sending data");
     for(uint8_t i = 0; i < ctx->request.nof_intervals; i++)
     {
@@ -95,8 +91,8 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
                 packet->length = (bytes_in_interval - sent_in_interval) + sizeof(uint32_t);
                 dbg_warn("last packet->length= %lu", packet->length);
             }
-            memcpy(packet->data + sizeof(uint32_t), dummy_payload, sizeof(dummy_payload));
             memcpy(packet->data, &bytes_sent, sizeof(uint32_t));
+            ctx->payload_meta.read(ctx->request.payload_id, bytes_sent, packet->data + sizeof(uint32_t), packet->length - sizeof(uint32_t));
             bytes_sent += packet->length - sizeof(uint32_t);
             sent_in_interval += packet->length - sizeof(uint32_t);
             csp_sendto(CSP_PRIO_NORM, ctx->destination, 8, 0, 0, packet);
