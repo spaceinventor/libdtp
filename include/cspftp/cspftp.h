@@ -18,8 +18,8 @@ extern "C"
     /** Returned by most of CSPFTP API calls*/
     typedef enum
     {
-        CSPFTP_OK, //<! Chill, all good
-        CSPFTP_ERR //<! Hmm, check errno...
+        CSPFTP_OK, //!< Chill, all good
+        CSPFTP_ERR //!< Hmm, check errno...
     } cspftp_result;
 
     /**
@@ -28,13 +28,13 @@ extern "C"
      */
     typedef enum
     {
-        CSPFTP_NO_ERR, //<! Chill, all good
-        CSPFTP_EINVAL, //<! Invalid argument
-        CSPFTP_ENOMORE_SESSIONS, //<! All static sessions in use
-        CSPFTP_ESESSION_NOT_FOUND, //<! Given session not found
-        CSPFTP_CONNECTION_FAILED, //<! Connecting to the server failed, for some rease
-        CSPFTP_MALLOC_FAILED, //<! Could not allocate a mandatory piece of memory
-        CSPFTP_NOT_IMPLEMENTED, //<! Still under construction, sorry
+        CSPFTP_NO_ERR, //!< Chill, all good
+        CSPFTP_EINVAL, //!< Invalid argument
+        CSPFTP_ENOMORE_SESSIONS, //!< All static sessions in use
+        CSPFTP_ESESSION_NOT_FOUND, //!< Given session not found
+        CSPFTP_CONNECTION_FAILED, //!< Connecting to the server failed, for some rease
+        CSPFTP_MALLOC_FAILED, //!< Could not allocate a mandatory piece of memory
+        CSPFTP_NOT_IMPLEMENTED, //!< Still under construction, sorry
         CSPFTP_LAST_ERR
     } cspftp_errno_t;
 
@@ -141,7 +141,7 @@ extern "C"
     cspftp_result cspftp_release_session(cspftp_t *session);
 
     /**
-     * Serialize a CSPFTP session using the given destination VMEM object
+     * @brief Serialize a CSPFTP session using the given destination VMEM object
      * 
      * A serialized CSPFTP session can be read back as a valid session using the counterpart cspftp_deserialize_session() function.
      * 
