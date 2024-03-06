@@ -8,57 +8,6 @@
 #include "cspftp_session.h"
 #include "cspftp_log.h"
 
-/**
- * Default session hooks
- */
-
-static void default_on_session_start(cspftp_t *session);
-static bool default_on_data_packet(cspftp_t *session, csp_packet_t *p);
-static void default_on_session_end(cspftp_t *session);
-static void default_on_serialize(cspftp_t *session, vmem_t *output);
-static void default_on_deserialize(cspftp_t *session, vmem_t *input);
-static void default_on_session_release(cspftp_t *session);
-
-cspftp_opt_session_hooks_cfg default_session_hooks __attribute__((weak)) = {
-    .on_start = default_on_session_start,
-    .on_data_packet = default_on_data_packet,
-    .on_end = default_on_session_end,
-    .on_serialize = default_on_serialize,
-    .on_deserialize = default_on_deserialize,
-    .on_release = default_on_session_release,
-};
-
-static void default_on_session_start(cspftp_t *session) {
-    dbg_log("Default on_start hook");
-    (void)session;
-}
-static bool default_on_data_packet(cspftp_t *session, csp_packet_t *packet) {
-    dbg_log("Default on_data_packet hook");
-    (void)session;
-    (void)packet;
-    return true;
-}
-static void default_on_session_end(cspftp_t *session) {
-    dbg_log("Default on_end hook");
-    (void)session;
-}
-
-static void default_on_serialize(cspftp_t *session, vmem_t *output) {
-    dbg_log("Default on_serialize hook");
-    (void)session;
-    (void)output;
-}
-
-static void default_on_deserialize(cspftp_t *session, vmem_t *input) {
-    dbg_log("Default on_deserialize hook");
-    (void)session;
-    (void)input;
-}
-static void default_on_session_release(cspftp_t *session) {
-    dbg_log("Default on_release hook");
-    (void)session;
-}
-
 int dtp_client_main(uint32_t server, cspftp_t **out_session) {
     cspftp_t *session = NULL;
     cspftp_result res = CSPFTP_OK;
