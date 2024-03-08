@@ -59,8 +59,6 @@ static void apm_on_end(cspftp_t *session) {
     segments_ctx_t *complements = get_complement_segment(segments);
     dbg_log("Missing segments:");
     print_segments(complements);
-    // dbg_log("Serializing session...");
-    // cspftp_serialize_session_to_file(session, "dtp_session.json");
     dbg_log("Done");
     free_segments(complements);
 }
