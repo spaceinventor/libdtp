@@ -26,6 +26,8 @@ extern "C"
         cspftp_opt_session_hooks_cfg hooks;
         uint32_t bytes_received;
         uint32_t total_bytes;
+        uint32_t start_ts;
+        uint32_t end_ts;
         cspftp_errno_t errno;
         cspftp_meta_req_t request_meta;
     } cspftp_t;
