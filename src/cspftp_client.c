@@ -2,13 +2,14 @@
 #include "cspftp/cspftp.h"
 #include "cspftp_internal_api.h"
 #include <csp/csp.h>
+#include <csp/arch/csp_time.h>
 #include <vmem/vmem_ram.h>
 
 #include "cspftp/cspftp.h"
 #include "cspftp_session.h"
 #include "cspftp_log.h"
 
-int dtp_client_main(uint32_t server, cspftp_t **out_session) {
+int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, cspftp_t **out_session) {
     cspftp_t *session = NULL;
     cspftp_result res = CSPFTP_OK;
 
@@ -24,6 +25,18 @@ int dtp_client_main(uint32_t server, cspftp_t **out_session) {
 
     cspftp_params remote_cfg = { .remote_cfg.node = server };
     res = cspftp_set_opt(session, CSPFTP_REMOTE_CFG, &remote_cfg);
+    if (CSPFTP_OK != res) {
+        goto get_out_please;
+    }
+
+    remote_cfg.throughput.value = max_throughput;
+    res = cspftp_set_opt(session, CSPFTP_THROUGHPUT_CFG, &remote_cfg);
+    if (CSPFTP_OK != res) {
+        goto get_out_please;
+    }
+
+    remote_cfg.timeout.value = timeout;
+    res = cspftp_set_opt(session, CSPFTP_TIMEOUT_CFG, &remote_cfg);
     if (CSPFTP_OK != res) {
         goto get_out_please;
     }
@@ -73,6 +86,8 @@ cspftp_result start_receiving_data(cspftp_t *session)
     uint32_t idle_ms = 0;
     csp_socket_t sock = { .opts = CSP_SO_CONN_LESS };
     csp_socket_t *socket = &sock;
+    session->start_ts = csp_get_s();
+    uint32_t now = session->start_ts;
     socket->opts = CSP_SO_CONN_LESS;
 
     if(session->hooks.on_start) {
@@ -83,7 +98,9 @@ cspftp_result start_receiving_data(cspftp_t *session)
     if(CSP_ERR_NONE == csp_bind(socket, 8)) {
         const uint32_t payload_s = CSPFTP_PACKET_SIZE - sizeof(uint32_t);
         uint32_t expected_nof_packets = compute_nof_packets(session->total_bytes, payload_s);
-        while ((session->bytes_received < session->total_bytes) && (idle_ms < 6000) && packet_seq < expected_nof_packets)
+        uint32_t nof_csp_packets = 0;
+
+        while ((session->bytes_received < session->total_bytes) && (idle_ms < (session->timeout * 1000)) && packet_seq < expected_nof_packets)
         {
             packet = csp_recvfrom(socket, 1000);
             if(NULL == packet) {
@@ -92,18 +109,20 @@ cspftp_result start_receiving_data(cspftp_t *session)
                 dbg_warn("No data received for %u ms, last packet_seq=%u", idle_ms, packet_seq);
                 continue;
             }
+            nof_csp_packets++;
+            now = csp_get_s();
             idle_ms = 0;
             session->bytes_received += packet->length - sizeof(uint32_t);
             packet_seq = packet->data32[0] / (CSPFTP_PACKET_SIZE - sizeof(uint32_t));
             if(session->hooks.on_data_packet) {
                 if (false == session->hooks.on_data_packet(session, packet)) {
-                   dbg_warn("on_data_packet() hook return flase, (TBD: aborting)"); 
+                   dbg_warn("on_data_packet() hook return false, (TBD: aborting)"); 
                 }
             }
             current_seq++;
             csp_buffer_free(packet);
         }
-        if (idle_ms > 6000) {
+        if (idle_ms > (session->timeout * 1000)) {
             dbg_warn("No data received for %u ms, bailing out", idle_ms);
         }
         csp_socket_close(socket);
@@ -113,6 +132,8 @@ cspftp_result start_receiving_data(cspftp_t *session)
     } else {
         result = CSPFTP_ERR;
     }
-    dbg_log("Received %lu bytes, expected: %lu, last seq: %lu, status: %d", session->bytes_received, session->total_bytes, current_seq, result);
+    uint32_t duration = now - session->start_ts;
+    dbg_log("Received %lu bytes, expected: %lu, last seq: %lu, status: %d", session->bytes_received, session->total_bytes, packet_seq, result);
+    dbg_log("Session duration: %u sec, avg throughput: %u bytes/sec", duration, session->bytes_received / duration);
     return result;
 }

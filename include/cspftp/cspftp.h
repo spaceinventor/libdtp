@@ -50,8 +50,8 @@ extern "C"
     typedef enum {
         CSPFTP_REMOTE_CFG = 1 << 0,
         CSPFTP_SESSION_HOOKS_CFG = 1 << 1,
-        CSPFTP_OPT_3 = 1 << 2,
-        CSPFTP_OPT_4 = 1 << 3,
+        CSPFTP_THROUGHPUT_CFG = 1 << 2,
+        CSPFTP_TIMEOUT_CFG = 1 << 3,
     } cspftp_option;
 
     /**
@@ -60,6 +60,14 @@ extern "C"
     typedef struct {
         uint16_t node;
     } cspftp_opt_remote_cfg;
+
+    typedef struct {
+        uint16_t value; /// MAX Throughout in MegaBits/s (1 Megabit = 0.125 Mega Bytes)
+    } cspftp_opt_throughput_cfg;
+
+    typedef struct {
+        uint8_t value; /// Idle timeout that will stop the session
+    } cspftp_opt_timeout_cfg;
 
     /**
      * configuration - DTP session hooks
@@ -119,6 +127,8 @@ extern "C"
     typedef union {
         cspftp_opt_remote_cfg remote_cfg;
         cspftp_opt_session_hooks_cfg hooks;
+        cspftp_opt_throughput_cfg throughput;
+        cspftp_opt_timeout_cfg timeout;
     } cspftp_params;
 
 /*
@@ -225,7 +235,7 @@ extern "C"
 #pragma region Simplified Public API
  */
     extern int dtp_server_main(bool *keep_running);
-    extern int dtp_client_main(uint32_t server, cspftp_t **session);
+    extern int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, cspftp_t **session);
 
 /*
 #pragma endregion

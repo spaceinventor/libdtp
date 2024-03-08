@@ -22,8 +22,10 @@ int dtp_client(struct slash *s)
     typedef struct {
         int color;
         uint32_t server;
+        unsigned int throughput;
+        unsigned int timeout;
     } dtp_client_opts_t;
-    dtp_client_opts_t opts = { 0 };
+    dtp_client_opts_t opts = { .color = 0, .server = 0, .throughput = 8, .timeout = 5 };
     optparse_t * parser = optparse_new("dtp_client", "<name>");
     /* This is very important, else the default no-op hooks will be used */
     default_session_hooks = apm_session_hooks;
@@ -31,6 +33,8 @@ int dtp_client(struct slash *s)
     optparse_add_help(parser);
     optparse_add_set(parser, 'c', "color", 1, &opts.color, "enable color output");
 	optparse_add_unsigned(parser, 's', "server", "CSP address", 0, &opts.server, "CSP Address of the DT server to retrieve data from (default = 0))");
+    optparse_add_unsigned(parser, 't', "throughput", "Transfer throughput", 0, &opts.throughput, "Max throughput expressed in MBits/sec (default = 8Mbits/sec))");
+    optparse_add_unsigned(parser, NULL, "timeout", "Timeout", 0, &opts.timeout, "Idle timeout (default = 5)");
 
     int argi = optparse_parse(parser, s->argc - 1, ((const char **)s->argv) + 1);
     if (argi < 0) {
@@ -40,7 +44,7 @@ int dtp_client(struct slash *s)
 
     optparse_del(parser);
     cspftp_t *session;
-    cspftp_result result = dtp_client_main(opts.server, &session);
+    cspftp_result result = dtp_client_main(opts.server, opts.throughput, opts.timeout, &session);
     cspftp_serialize_session(session, &VMEM_MMAP_VAR(dtp_session));
 
     if (CSPFTP_ERR == result) {

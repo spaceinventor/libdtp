@@ -30,6 +30,7 @@ extern "C"
         uint32_t end_ts;
         cspftp_errno_t errno;
         cspftp_meta_req_t request_meta;
+        uint8_t timeout;
     } cspftp_t;
 
 #ifdef __cplusplus

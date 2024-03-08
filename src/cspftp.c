@@ -171,6 +171,13 @@ cspftp_result cspftp_set_opt(cspftp_t *session, cspftp_option option, cspftp_par
         session->hooks.on_deserialize = param->hooks.on_deserialize;
         break;
     }
+    case CSPFTP_THROUGHPUT_CFG:
+        session->request_meta.throughput = param->throughput.value;
+    break;
+    case CSPFTP_TIMEOUT_CFG:
+        session->timeout = param->timeout.value;
+    break;
+    
     default:
         break;
     }
