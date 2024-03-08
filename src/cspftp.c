@@ -233,3 +233,10 @@ void cspftp_set_errno(cspftp_t *session, cspftp_errno_t errno)
         last_error = errno;
     }
 }
+
+uint32_t compute_throughput(uint32_t now, uint32_t last_ts, uint32_t bytes_sent) {
+    if((now != last_ts)) {
+        return bytes_sent / (now - last_ts);
+    }
+    return 0;
+}
