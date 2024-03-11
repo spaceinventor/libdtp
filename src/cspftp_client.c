@@ -105,7 +105,6 @@ cspftp_result start_receiving_data(cspftp_t *session)
             packet = csp_recvfrom(socket, 1000);
             if(NULL == packet) {
                 idle_ms += 1000;
-                if (idle_ms % 1000 == 0)
                 dbg_warn("No data received for %u ms, last packet_seq=%u", idle_ms, packet_seq);
                 continue;
             }
@@ -122,7 +121,7 @@ cspftp_result start_receiving_data(cspftp_t *session)
             current_seq++;
             csp_buffer_free(packet);
         }
-        if (idle_ms > (session->timeout * 1000)) {
+        if (idle_ms >= (session->timeout * 1000)) {
             dbg_warn("No data received for %u ms, bailing out", idle_ms);
         }
         csp_socket_close(socket);
@@ -133,6 +132,7 @@ cspftp_result start_receiving_data(cspftp_t *session)
         result = CSPFTP_ERR;
     }
     uint32_t duration = now - session->start_ts;
+    duration = duration?duration:1;
     dbg_log("Received %lu bytes, expected: %lu, last seq: %lu, status: %d", session->bytes_received, session->total_bytes, packet_seq, result);
     dbg_log("Session duration: %u sec, avg throughput: %u bytes/sec", duration, session->bytes_received / duration);
     return result;
