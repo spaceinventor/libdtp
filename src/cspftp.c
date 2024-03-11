@@ -62,6 +62,9 @@ cspftp_opt_session_hooks_cfg default_session_hooks __attribute__((weak)) = {
     .on_release = default_on_session_release,
 };
 
+
+const uint32_t CSPFTP_SESSION_VERSION = 1;
+
 static void default_on_session_start(cspftp_t *session) {
     dbg_log("Default on_start hook");
     (void)session;
