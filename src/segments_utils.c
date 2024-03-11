@@ -123,7 +123,7 @@ uint32_t get_nof_segments(segments_ctx_t *ctx) {
 }
 
 void free_segments(segments_ctx_t *ctx) {
-    if(0 != ctx->segments) {
+    if(0 != ctx && 0 != ctx->segments) {
         segment_t *runner  = ctx->segments;
         segment_t *tmp;
         while(runner) {
