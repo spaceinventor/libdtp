@@ -1,5 +1,7 @@
 #include <csp/csp.h>
+#include <csp/arch/csp_time.h>
 #include "cspftp/cspftp.h"
+#include "cspftp_internal_api.h"
 #include "cspftp_protocol.h"
 #include "cspftp_log.h"
 
@@ -58,47 +60,75 @@ static uint32_t compute_transfer_size(cspftp_server_transfer_ctx_t *ctx) {
     return size;
 }
 
-#define PKT_SIZE (200U)
-
 extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
 {
     cspftp_result result = CSPFTP_OK;
     csp_packet_t *packet;
     uint32_t bytes_sent = 0;
     uint32_t nof_csp_packets = 0;
-    dbg_log("Start sending data");
+    dbg_log("Start sending data, setting max throughput to %u MBits/sec", ctx->request.throughput);
+    uint32_t first_packet_ts = csp_get_ms();
+    uint32_t now;
+    uint32_t current_throughput = 0;
+    uint32_t max_throughput = ctx->request.throughput * 1000 / 8; // In bytes/second
+    uint32_t packets_second = (max_throughput / CSPFTP_PACKET_SIZE);
+    dbg_log("Throughput in packets/sec: %u", packets_second);
+
+    bool throttling = false;
+
     for(uint8_t i = 0; i < ctx->request.nof_intervals; i++)
     {
         uint32_t interval_start = ctx->request.intervals[i].start;
         uint32_t interval_stop = ctx->request.intervals[i].end;
         uint32_t bytes_in_interval = interval_stop - interval_start;
         uint32_t sent_in_interval = 0;
-        uint32_t throttler = 0;
         while(sent_in_interval < bytes_in_interval) {
-            if((throttler % 250) == 0) {
-                usleep(1000);
+
+            now = csp_get_ms();
+            if((now - first_packet_ts) < 500) {
+                // TODO: Could sleep instead of spinning the CPU for now - first_packet_ts millisenconds,
+                // this requires a platform-agnostic sleep mechanism.
+                continue;
             }
-            throttler++;
+            if(!throttling) {
+                current_throughput = compute_throughput(now, first_packet_ts, bytes_sent) * 1000;
+                throttling = current_throughput > max_throughput;
+                if (throttling) {
+                    // TODO: Could sleep instead of spinning the CPU for current_throughput - max_throughput millisenconds,
+                    // this requires a platform-agnostic sleep mechanism.
+                    continue;
+                }
+            } else {
+                current_throughput = compute_throughput(now, first_packet_ts, bytes_sent) * 1000;
+                throttling = current_throughput > max_throughput;
+                if (throttling) {
+                    // TODO: Could sleep instead of spinning the CPU for current_throughput - max_throughput millisenconds,
+                    // this requires a platform-agnostic sleep mechanism.
+                    continue;
+                }
+            }
             packet = csp_buffer_get(0);
             if(NULL == packet) {
-                // Count maybe ?
                 dbg_warn("could not get packet to send");
                 continue;
             }
+            nof_csp_packets++;
             if((bytes_in_interval - sent_in_interval) > (CSPFTP_PACKET_SIZE - sizeof(uint32_t))) {
                 packet->length = CSPFTP_PACKET_SIZE;
             } else {
+                // This is the last packet to send, its size is most likely not == CSPFTP_PACKET_SIZE - sizeof(uint32_t)
                 packet->length = (bytes_in_interval - sent_in_interval) + sizeof(uint32_t);
-                dbg_warn("last packet->length= %lu", packet->length);
             }
             memcpy(packet->data, &bytes_sent, sizeof(uint32_t));
             ctx->payload_meta.read(ctx->request.payload_id, bytes_sent, packet->data + sizeof(uint32_t), packet->length - sizeof(uint32_t));
             bytes_sent += packet->length - sizeof(uint32_t);
             sent_in_interval += packet->length - sizeof(uint32_t);
+            // TODO: The priority parameter might need to be adjusted according to payload meta-data, though it may not any any impact
+            // on actual speed transfer at all.
             csp_sendto(CSP_PRIO_NORM, ctx->destination, 8, 0, 0, packet);
-            nof_csp_packets++;
         }
     }
+    dbg_warn("last packet->length= %lu, nof_csp_packets= %lu", packet->length, nof_csp_packets);
     dbg_warn("Server transfer completed, sent %lu bytes in %lu packets", bytes_sent, nof_csp_packets);
     return result;
 }

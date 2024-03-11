@@ -76,7 +76,7 @@ void tearDown()
 REGISTER_TEST(inter_process_transfer)
 {
 	if (csh_available) {
-		char *cmd_line = "csh -i conf/dtp_client.csh \"dtp_client -s 3 --timeout=1 -t 24\"";
+		char *cmd_line = "csh -i conf/dtp_client.csh \"dtp_client -s 3 --timeout=1 -t 8192\"";
 		int res = system(cmd_line);
 		kill(server_pid, 9);
 		kill(zmqproxy_pid, 9);
