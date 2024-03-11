@@ -6,7 +6,8 @@
 #include "segments_utils.h"
 
 VMEM_DEFINE_MMAP(dtp_session, "dtp_session.json", "dtp_session.json", 1024);
-VMEM_DEFINE_MMAP(dtp_data, "dtp_data.bin", "dtp_data.bin", 1024 * 1024 * 129);
+VMEM_DEFINE_MMAP(dtp_data, "dtp_data.bin", "dtp_data.bin", 1024);
+
 static void apm_on_start(cspftp_t *session);
 static bool apm_on_data_packet(cspftp_t *session, csp_packet_t *p);
 static void apm_on_end(cspftp_t *session);
@@ -26,13 +27,15 @@ const cspftp_opt_session_hooks_cfg apm_session_hooks = {
 static void apm_on_start(cspftp_t *session) {
     segments_ctx_t *segments = init_segments_ctx();
     session->hooks.hook_ctx = segments;
-
+    uint32_t dummy = 0;
+    /* Grow file to expected session size */
+    VMEM_MMAP_VAR(dtp_data).write(&VMEM_MMAP_VAR(dtp_data), session->total_bytes - sizeof(dummy), &dummy, sizeof(dummy));
 }
 
 static bool apm_on_data_packet(cspftp_t *session, csp_packet_t *packet) {
     segments_ctx_t *segments = (segments_ctx_t *)session->hooks.hook_ctx;
     uint32_t packet_seq = packet->data32[0] / (CSPFTP_PACKET_SIZE - sizeof(uint32_t));
-    VMEM_MMAP_VAR(dtp_data).write(&VMEM_MMAP_VAR(dtp_data), packet_seq * (CSPFTP_PACKET_SIZE - sizeof(uint32_t)), &packet->data32[1], (packet->length - 1));
+    VMEM_MMAP_VAR(dtp_data).write(&VMEM_MMAP_VAR(dtp_data), packet_seq * (CSPFTP_PACKET_SIZE - sizeof(uint32_t)), &packet->data32[1], (packet->length - sizeof(uint32_t)));
     return update_segments(segments, packet_seq);
 }
 
