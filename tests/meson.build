@@ -7,6 +7,8 @@ test('test_1', executable('test_1', 'test_1.c', dependencies: [dtp_client_lib_de
 
 test('test_segmentation', executable('test_segmentation', 'test_segmentation.c', dependencies: [dtp_client_lib_dep, unity_test_dep]))
 
+test('test_utilities', executable('test_utilities', 'test_utilities.c', dependencies: [dtp_server_lib_dep, unity_test_dep]))
+
 # Integration test 1: running an intra process transfer, everything (client, server, router) runs in its own thread in the same process
 test('test_integration_1', executable('test_integration_1', 'test_integration_1.c', include_directories: [], dependencies:[dtp_client_lib_dep, dtp_server_lib_dep, apm_utils_lib_dep, slash_dep, unity_test_dep]))
 
