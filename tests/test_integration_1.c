@@ -80,7 +80,7 @@ VMEM_DEFINE_FILE(dtp_test_session, "dtp_test_session.json", "dtp_test_session.js
 
 REGISTER_TEST(in_process_transfer) {
 	cspftp_t *session;
-	TEST_ASSERT(0 == dtp_client_main(0, 1024*16, 2, &session));
+	TEST_ASSERT(0 == dtp_client_main(0, 1024 * 63, 2, &session));
 	cspftp_serialize_session(session, &vmem_dtp_test_session);
 }
 
