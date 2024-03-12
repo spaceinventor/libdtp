@@ -20,7 +20,7 @@ __attribute__((weak)) bool get_payload_meta(dftp_payload_meta_t *meta, uint8_t p
         /* deliberate fallthrough for now */
         default:
             /* 128 Mb for testing */
-            meta->size = 128 * 1024 * 1024;
+            meta->size = 128 * 1024; // * 1024;
             meta->read = payload_read;
         break;
     }

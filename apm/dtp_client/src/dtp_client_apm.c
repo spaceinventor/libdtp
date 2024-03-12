@@ -21,6 +21,7 @@ int dtp_client(struct slash *s)
 {
     typedef struct {
         int color;
+        int resume;
         uint32_t server;
         unsigned int throughput;
         unsigned int timeout;
@@ -32,6 +33,7 @@ int dtp_client(struct slash *s)
 
     optparse_add_help(parser);
     optparse_add_set(parser, 'c', "color", 1, &opts.color, "enable color output");
+    optparse_add_set(parser, 'r', "resume", 1, &opts.resume, "resume previous session");
 	optparse_add_unsigned(parser, 's', "server", "CSP address", 0, &opts.server, "CSP Address of the DT server to retrieve data from (default = 0))");
     optparse_add_unsigned(parser, 't', "throughput", "Transfer throughput", 0, &opts.throughput, "Max throughput expressed in MBits/sec (default = 8Mbits/sec))");
     optparse_add_unsigned(parser, NULL, "timeout", "Timeout", 0, &opts.timeout, "Idle timeout (default = 5)");
@@ -44,7 +46,7 @@ int dtp_client(struct slash *s)
 
     optparse_del(parser);
     cspftp_t *session;
-    cspftp_result result = dtp_client_main(opts.server, opts.throughput, opts.timeout, &session);
+    cspftp_result result = dtp_client_main(opts.server, opts.throughput, opts.timeout, opts.resume, &session);
     cspftp_serialize_session(session, &VMEM_MMAP_VAR(dtp_session));
 
     if (CSPFTP_ERR == result) {

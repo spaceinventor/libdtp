@@ -9,7 +9,7 @@
 #include "cspftp_session.h"
 #include "cspftp_log.h"
 
-int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, cspftp_t **out_session) {
+int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, bool resume, cspftp_t **out_session) {
     cspftp_t *session = NULL;
     cspftp_result res = CSPFTP_OK;
 
@@ -23,22 +23,29 @@ int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, c
         dbg_log("Session created: %p", session);
     }
 
-    cspftp_params remote_cfg = { .remote_cfg.node = server };
-    res = cspftp_set_opt(session, CSPFTP_REMOTE_CFG, &remote_cfg);
-    if (CSPFTP_OK != res) {
-        goto get_out_please;
-    }
+    if (resume) {
+        res = cspftp_deserialize_session(session, 0);
+        if (CSPFTP_OK != res) {
+            goto get_out_please;
+        }
+    } else {
+        cspftp_params remote_cfg = { .remote_cfg.node = server };
+        res = cspftp_set_opt(session, CSPFTP_REMOTE_CFG, &remote_cfg);
+        if (CSPFTP_OK != res) {
+            goto get_out_please;
+        }
 
-    remote_cfg.throughput.value = max_throughput;
-    res = cspftp_set_opt(session, CSPFTP_THROUGHPUT_CFG, &remote_cfg);
-    if (CSPFTP_OK != res) {
-        goto get_out_please;
-    }
+        remote_cfg.throughput.value = max_throughput;
+        res = cspftp_set_opt(session, CSPFTP_THROUGHPUT_CFG, &remote_cfg);
+        if (CSPFTP_OK != res) {
+            goto get_out_please;
+        }
 
-    remote_cfg.timeout.value = timeout;
-    res = cspftp_set_opt(session, CSPFTP_TIMEOUT_CFG, &remote_cfg);
-    if (CSPFTP_OK != res) {
-        goto get_out_please;
+        remote_cfg.timeout.value = timeout;
+        res = cspftp_set_opt(session, CSPFTP_TIMEOUT_CFG, &remote_cfg);
+        if (CSPFTP_OK != res) {
+            goto get_out_please;
+        }
     }
 
     res = cspftp_start_transfer(session);
@@ -100,7 +107,7 @@ cspftp_result start_receiving_data(cspftp_t *session)
         uint32_t expected_nof_packets = compute_nof_packets(session->total_bytes, payload_s);
         uint32_t nof_csp_packets = 0;
 
-        while ((session->bytes_received < session->total_bytes) && (idle_ms < (session->timeout * 1000)) && packet_seq < expected_nof_packets)
+        while ((session->bytes_received < session->total_bytes) && (idle_ms <= (session->timeout * 1000)) && packet_seq < expected_nof_packets)
         {
             packet = csp_recvfrom(socket, 1000);
             if(NULL == packet) {
