@@ -128,7 +128,7 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
             csp_sendto(CSP_PRIO_NORM, ctx->destination, 8, 0, 0, packet);
         }
     }
-    dbg_warn("last packet->length= %lu, nof_csp_packets= %lu", packet->length, nof_csp_packets);
+    dbg_warn("nof_csp_packets= %lu", nof_csp_packets);
     dbg_warn("Server transfer completed, sent %lu bytes in %lu packets", bytes_sent, nof_csp_packets);
     return result;
 }
