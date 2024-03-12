@@ -76,12 +76,28 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
 
     bool throttling = false;
 
+    dbg_log("===========================================");
+    dbg_log("NOF intervals: %u", ctx->request.nof_intervals);
+    for(uint8_t i = 0; i < ctx->request.nof_intervals; i++)
+    {
+        uint32_t interval_start = ctx->request.intervals[i].start;
+        uint32_t interval_stop = ctx->request.intervals[i].end;
+        uint32_t bytes_in_interval = interval_stop - interval_start;
+        dbg_log("interval_start: %u", interval_start);
+        dbg_log("interval_stop: %u", interval_stop);
+        dbg_log("bytes_in_interval: %u", bytes_in_interval);
+    }
+    dbg_log("===========================================");
+
     for(uint8_t i = 0; i < ctx->request.nof_intervals; i++)
     {
         uint32_t interval_start = ctx->request.intervals[i].start;
         uint32_t interval_stop = ctx->request.intervals[i].end;
         uint32_t bytes_in_interval = interval_stop - interval_start;
         uint32_t sent_in_interval = 0;
+        dbg_log("interval_start: %u", interval_start);
+        dbg_log("interval_stop: %u", interval_stop);
+        dbg_log("bytes_in_interval: %u", bytes_in_interval);
         while(sent_in_interval < bytes_in_interval) {
 
             now = csp_get_ms();
@@ -127,6 +143,7 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
             // on actual speed transfer at all.
             csp_sendto(CSP_PRIO_NORM, ctx->destination, 8, 0, 0, packet);
         }
+        dbg_log("sent_in_interval: %u", sent_in_interval);
     }
     dbg_warn("nof_csp_packets= %lu", nof_csp_packets);
     dbg_warn("Server transfer completed, sent %lu bytes in %lu packets", bytes_sent, nof_csp_packets);
