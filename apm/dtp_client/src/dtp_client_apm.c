@@ -35,8 +35,8 @@ int dtp_client(struct slash *s)
     optparse_add_set(parser, 'c', "color", 1, &opts.color, "enable color output");
     optparse_add_set(parser, 'r', "resume", 1, &opts.resume, "resume previous session");
 	optparse_add_unsigned(parser, 's', "server", "CSP address", 0, &opts.server, "CSP Address of the DT server to retrieve data from (default = 0))");
-    optparse_add_unsigned(parser, 't', "throughput", "Transfer throughput", 0, &opts.throughput, "Max throughput expressed in MBits/sec (default = 8Mbits/sec))");
-    optparse_add_unsigned(parser, NULL, "timeout", "Timeout", 0, &opts.timeout, "Idle timeout (default = 5)");
+    optparse_add_unsigned(parser, 't', "throughput", "Transfer throughput", 8, &opts.throughput, "Max throughput expressed in MBits/sec (default = 8Mbits/sec))");
+    optparse_add_unsigned(parser, 'T', "timeout", "Timeout", 5, &opts.timeout, "Idle timeout (default = 5)");
 
     int argi = optparse_parse(parser, s->argc - 1, ((const char **)s->argv) + 1);
     if (argi < 0) {
