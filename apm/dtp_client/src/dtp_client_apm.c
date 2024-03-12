@@ -3,10 +3,10 @@
 #include <vmem/vmem_mmap.h>
 #include <slash/slash.h>
 #include <slash/optparse.h>
-#include "cspftp/cspftp.h"
+#include "dtp/dtp.h"
 #include "segments_utils.h"
-#include "cspftp_log.h"
-#include "cspftp_session.h"
+#include "dtp_log.h"
+#include "dtp_session.h"
 
 extern  vmem_t VMEM_MMAP_VAR(dtp_session);
 
@@ -15,7 +15,7 @@ int apm_init(void)
     return 0;
 }
 
-extern cspftp_opt_session_hooks_cfg apm_session_hooks;
+extern dtp_opt_session_hooks_cfg apm_session_hooks;
 
 int dtp_client(struct slash *s)
 {
@@ -45,20 +45,20 @@ int dtp_client(struct slash *s)
     }
 
     optparse_del(parser);
-    cspftp_t *session;
-    cspftp_result result = dtp_client_main(opts.server, opts.throughput, opts.timeout, opts.resume, &session);
-    cspftp_serialize_session(session, &VMEM_MMAP_VAR(dtp_session));
+    dtp_t *session;
+    dtp_result result = dtp_client_main(opts.server, opts.throughput, opts.timeout, opts.resume, &session);
+    dtp_serialize_session(session, &VMEM_MMAP_VAR(dtp_session));
 
-    if (CSPFTP_ERR == result) {
-        switch(cspftp_errno(NULL)) {
-            case CSPFTP_EINVAL:
+    if (DTP_ERR == result) {
+        switch(dtp_errno(NULL)) {
+            case DTP_EINVAL:
                 return SLASH_EINVAL;
             default:
-                printf("%s\n", cspftp_strerror(cspftp_errno(NULL)));
+                printf("%s\n", dtp_strerror(dtp_errno(NULL)));
                 return SLASH_SUCCESS;
         }
     } else {
-        cspftp_release_session(session);
+        dtp_release_session(session);
     }
     return SLASH_SUCCESS;
 }

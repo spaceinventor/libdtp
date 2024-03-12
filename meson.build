@@ -1,4 +1,4 @@
-project('cspftp', 'c', subproject_dir: 'extern', version: '0.0.1', default_options: [
+project('dtp', 'c', subproject_dir: 'extern', version: '0.0.1', default_options: [
   'default_library=static',
 	'b_lto=false',
   'b_lundef=false',
@@ -43,9 +43,9 @@ gen_doc = find_program('gen-sidoc', required: false)
 if gen_doc.found()
   doc_out = meson.current_build_dir() / '@OUTPUT@'
   doc = custom_target('doc',
-    output : 'CSP_FTP.pdf',
-    input : ['doc/cspftp.rst', 'README.rst'],
-    command : ['gen-sidoc', '-t', 'MAN', 'CSP_FTP', '@INPUT0@', '-o', doc_out],
+    output : 'DTP.pdf',
+    input : ['doc/dtp.rst', 'README.rst'],
+    command : ['gen-sidoc', '-t', 'MAN', 'DTP', '@INPUT0@', '-o', doc_out],
     build_by_default: false
   )
 endif

@@ -1,11 +1,11 @@
 #include <csp/csp.h>
 #include <csp/arch/csp_time.h>
-#include "cspftp/cspftp.h"
-#include "cspftp_internal_api.h"
-#include "cspftp_protocol.h"
-#include "cspftp_log.h"
+#include "dtp/dtp.h"
+#include "dtp_internal_api.h"
+#include "dtp_protocol.h"
+#include "dtp_log.h"
 
-static void cspftp_server_run(bool *keep_running)
+static void dtp_server_run(bool *keep_running)
 {
     static csp_socket_t sock = {0};
     sock.opts = CSP_O_RDP;
@@ -43,7 +43,7 @@ static void cspftp_server_run(bool *keep_running)
     dbg_log("Bye");
 }
 
-static uint32_t compute_transfer_size(cspftp_server_transfer_ctx_t *ctx) {
+static uint32_t compute_transfer_size(dtp_server_transfer_ctx_t *ctx) {
     uint32_t size = 0;
     interval_t *cur_int;
     for (uint8_t i=0; i < ctx->request.nof_intervals; i++) {
@@ -60,9 +60,9 @@ static uint32_t compute_transfer_size(cspftp_server_transfer_ctx_t *ctx) {
     return size;
 }
 
-extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
+extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
 {
-    cspftp_result result = CSPFTP_OK;
+    dtp_result result = DTP_OK;
     csp_packet_t *packet;
     uint32_t bytes_sent = 0;
     uint32_t nof_csp_packets = 0;
@@ -71,7 +71,7 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
     uint32_t now;
     uint32_t current_throughput = 0;
     uint32_t max_throughput = ctx->request.throughput * 1000 / 8; // In bytes/second
-    uint32_t packets_second = (max_throughput / CSPFTP_PACKET_SIZE);
+    uint32_t packets_second = (max_throughput / DTP_PACKET_SIZE);
     dbg_log("Throughput in packets/sec: %u", packets_second);
 
     bool throttling = false;
@@ -129,10 +129,10 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
                 continue;
             }
             nof_csp_packets++;
-            if((bytes_in_interval - sent_in_interval) > (CSPFTP_PACKET_SIZE - sizeof(uint32_t))) {
-                packet->length = CSPFTP_PACKET_SIZE;
+            if((bytes_in_interval - sent_in_interval) > (DTP_PACKET_SIZE - sizeof(uint32_t))) {
+                packet->length = DTP_PACKET_SIZE;
             } else {
-                // This is the last packet to send, its size is most likely not == CSPFTP_PACKET_SIZE - sizeof(uint32_t)
+                // This is the last packet to send, its size is most likely not == DTP_PACKET_SIZE - sizeof(uint32_t)
                 packet->length = (bytes_in_interval - sent_in_interval) + sizeof(uint32_t);
             }
             memcpy(packet->data, &bytes_sent, sizeof(uint32_t));
@@ -150,10 +150,10 @@ extern cspftp_result start_sending_data(cspftp_server_transfer_ctx_t *ctx)
     return result;
 }
 
-csp_packet_t *setup_server_transfer(cspftp_server_transfer_ctx_t *ctx, uint16_t dst, csp_packet_t *request) {
+csp_packet_t *setup_server_transfer(dtp_server_transfer_ctx_t *ctx, uint16_t dst, csp_packet_t *request) {
     csp_packet_t *result = 0;
 
-    memcpy(&(ctx->request), (cspftp_meta_req_t *)request->data, sizeof(cspftp_meta_req_t));
+    memcpy(&(ctx->request), (dtp_meta_req_t *)request->data, sizeof(dtp_meta_req_t));
     ctx->destination = dst;
 
     /* Get the payload information */
@@ -167,8 +167,8 @@ csp_packet_t *setup_server_transfer(cspftp_server_transfer_ctx_t *ctx, uint16_t 
     result = csp_buffer_get(0);
     if (result) {
         /* prepare the response */
-        result->length = sizeof(cspftp_meta_req_t);
-        cspftp_meta_resp_t *meta_resp = (cspftp_meta_resp_t *)result->data;
+        result->length = sizeof(dtp_meta_req_t);
+        dtp_meta_resp_t *meta_resp = (dtp_meta_resp_t *)result->data;
         meta_resp->total_payload_size = ctx->payload_meta.size;
         meta_resp->size_in_bytes = ctx->size_in_bytes;
     }
@@ -177,6 +177,6 @@ csp_packet_t *setup_server_transfer(cspftp_server_transfer_ctx_t *ctx, uint16_t 
 
 int dtp_server_main(bool *keep_running)
 {
-    cspftp_server_run(keep_running);
+    dtp_server_run(keep_running);
     return 0;
 }

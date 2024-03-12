@@ -1,11 +1,11 @@
 #include <stdio.h>
-#include "cspftp_session.h"
+#include "dtp_session.h"
 
-void parse_meta_data(FILE *f, cspftp_t *session) {
+void parse_meta_data(FILE *f, dtp_t *session) {
     uint32_t buffer = 0;
-    fread(&buffer, sizeof(CSPFTP_SESSION_VERSION), 1, f);
+    fread(&buffer, sizeof(DTP_SESSION_VERSION), 1, f);
     fread(&session->remote_cfg.node, sizeof(session->remote_cfg.node), 1, f);
-    fread(&buffer, sizeof(CSPFTP_PACKET_SIZE), 1, f);
+    fread(&buffer, sizeof(DTP_PACKET_SIZE), 1, f);
     fread(&session->request_meta.timeout, sizeof(session->request_meta.timeout), 1, f);
     fread(&session->request_meta.throughput, sizeof(session->request_meta.throughput), 1, f);
     fread(&session->request_meta.payload_id, sizeof(session->request_meta.payload_id), 1, f);
@@ -29,7 +29,7 @@ int main(int argc, const char *argv[]) {
     if (!f) {
         printf("Usage: session-meta [<dtp_session_meta.bin>]\n");
     } else {
-        cspftp_t session = {0};
+        dtp_t session = {0};
         parse_meta_data(f, &session);
         printf("Session data from file: %s\n", file_name);
         printf("  remote address: %u\n", session.remote_cfg.node);

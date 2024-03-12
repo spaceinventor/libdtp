@@ -11,7 +11,7 @@ extern "C"
 #endif
 
 #include <stdint.h>
-#include "cspftp/cspftp.h"
+#include "dtp/dtp.h"
 
     /**
      * @brief Payload to transfer meta data (size, buffered access interfaces, etc)

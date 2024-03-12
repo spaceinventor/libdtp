@@ -1,7 +1,7 @@
 #include <apm/apm.h>
 #include <slash/slash.h>
 #include <slash/optparse.h>
-#include <cspftp/cspftp.h>
+#include <dtp/dtp.h>
 #define __USE_GNU
 #include <pthread.h>
 

@@ -1,4 +1,4 @@
-name: CSP-FTP CI
+name: DTP CI
 
 on:
   push:

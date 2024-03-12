@@ -1,7 +1,7 @@
 #include "unity.h"
 #include "unity_test_utils.h"
 
-#include "cspftp/cspftp.h"
+#include "dtp/dtp.h"
 #include "vmem/vmem_ram.h"
 
 static uint8_t vmem_ram[256] = {0};
@@ -14,28 +14,28 @@ void tearDown(void) {
 }
 
 REGISTER_TEST(test_create_destroy) {
-    cspftp_t *session = cspftp_acquire_session();
+    dtp_t *session = dtp_acquire_session();
     TEST_ASSERT(0 != session);
 }
 
 REGISTER_TEST(test_serialize_session) {
-    cspftp_t *session = cspftp_acquire_session();
+    dtp_t *session = dtp_acquire_session();
     TEST_ASSERT(0 != session);
-    cspftp_result res = cspftp_serialize_session(session, &vmem_session_serialize_test);
-    TEST_ASSERT(res == CSPFTP_OK);
+    dtp_result res = dtp_serialize_session(session, &vmem_session_serialize_test);
+    TEST_ASSERT(res == DTP_OK);
 }
 
 
 REGISTER_TEST(test_options) {
-    cspftp_t *session = cspftp_acquire_session();    
-    cspftp_params r_info = {
+    dtp_t *session = dtp_acquire_session();    
+    dtp_params r_info = {
         .remote_cfg.node = 0
     };
-    cspftp_result res = cspftp_set_opt(session, CSPFTP_REMOTE_CFG, &r_info);
-    TEST_ASSERT(res == CSPFTP_OK);
+    dtp_result res = dtp_set_opt(session, DTP_REMOTE_CFG, &r_info);
+    TEST_ASSERT(res == DTP_OK);
     r_info.remote_cfg.node = 255;
-    res = cspftp_get_opt(session, CSPFTP_REMOTE_CFG, &r_info);
-    TEST_ASSERT(res == CSPFTP_OK);
+    res = dtp_get_opt(session, DTP_REMOTE_CFG, &r_info);
+    TEST_ASSERT(res == DTP_OK);
     TEST_ASSERT(0 == r_info.remote_cfg.node);
 }
 

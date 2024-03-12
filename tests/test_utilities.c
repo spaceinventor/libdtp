@@ -1,6 +1,6 @@
 #include "unity.h"
 #include "unity_test_utils.h"
-#include "cspftp_internal_api.h"
+#include "dtp_internal_api.h"
 
 void setUp() {}
 void tearDown() {}
