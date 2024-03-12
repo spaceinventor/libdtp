@@ -76,7 +76,7 @@ static void apm_on_release(cspftp_t *session) {
 }
 
 static void segment_counter(uint32_t _1, uint32_t _2, uint32_t _3, void *counter) {    
-    *(uint32_t *)counter = *(uint32_t *)counter + 1;
+    *(uint8_t *)counter = *(uint8_t *)counter + 1;
 }
 
 static void write_segment_to_file(uint32_t _1, uint32_t start, uint32_t end, void *output) {
@@ -88,11 +88,11 @@ static void apm_on_serialize(cspftp_t *session, vmem_t *output) {
     uint32_t offset = 0;
     uint32_t cur_len;
     FILE *f = fopen("dtp_session_meta.bin", "wb");
-    if (!f) {
-    } else {
+    if (f) {
         segments_ctx_t *segments = (segments_ctx_t *)session->hooks.hook_ctx;
         // For future development, stamp the version as the first 32bits in the file
         fwrite(&CSPFTP_SESSION_VERSION, sizeof(CSPFTP_SESSION_VERSION), 1, f);
+        fwrite(&session->remote_cfg.node, sizeof(session->remote_cfg.node), 1, f);
         // Write size of transmission unit, to compute size from sequence number
         fwrite(&CSPFTP_PACKET_SIZE, sizeof(CSPFTP_PACKET_SIZE), 1, f);
         fwrite(&session->request_meta.timeout, sizeof(session->request_meta.timeout), 1, f);
@@ -100,14 +100,19 @@ static void apm_on_serialize(cspftp_t *session, vmem_t *output) {
         fwrite(&session->request_meta.payload_id, sizeof(session->request_meta.payload_id), 1, f);
         fwrite(&session->bytes_received, sizeof(session->bytes_received), 1, f);
         fwrite(&session->total_bytes, sizeof(session->total_bytes), 1, f);
-        // number of missing segments
-        uint8_t nof_segments = 0;
-        segments_ctx_t *missing_segments = get_complement_segment(segments);
-        for_each_segment(missing_segments, segment_counter, &nof_segments);
-        fwrite(&nof_segments, sizeof(nof_segments), 1, f);
-        for_each_segment(missing_segments, write_segment_to_file, f);
-        free_segments(missing_segments);
+        if(segments) {
+            // number of missing segments
+            uint8_t nof_segments = 0;
+            segments_ctx_t *missing_segments = get_complement_segment(segments);
+            for_each_segment(missing_segments, segment_counter, &nof_segments);
+            fwrite(&nof_segments, sizeof(nof_segments), 1, f);
+            for_each_segment(missing_segments, write_segment_to_file, f);
+            free_segments(missing_segments);
+        }
         fclose(f);
+    } else {
+        dbg_warn("Serialization: could not open dtp_session_meta.bin!");
+    }
 
         // cur_len = snprintf(line_buf, 128, "{\n\t\"payload_id\": %u,\n", session->request_meta.payload_id);
         // output->write(output, offset, line_buf, cur_len);
@@ -139,7 +144,6 @@ static void apm_on_serialize(cspftp_t *session, vmem_t *output) {
         // offset--; /* backtrack to the last comma */
         // cur_len = snprintf(line_buf, 128, "\n\t]\n}\n");
         // output->write(output, offset, line_buf, cur_len);
-    }
 }
 
 static void apm_on_deserialize(cspftp_t *session, vmem_t *input) {
@@ -150,6 +154,7 @@ static void apm_on_deserialize(cspftp_t *session, vmem_t *input) {
         if(buffer != CSPFTP_SESSION_VERSION) {
             dbg_warn("Session was serialized with a different DTP version (read: %u, current version: %u)!", CSPFTP_SESSION_VERSION, buffer);
         } else {
+            fread(&session->remote_cfg.node, sizeof(session->remote_cfg.node), 1, f);
             fread(&buffer, sizeof(CSPFTP_PACKET_SIZE), 1, f);
             fread(&session->request_meta.timeout, sizeof(session->request_meta.timeout), 1, f);
             fread(&session->request_meta.throughput, sizeof(session->request_meta.throughput), 1, f);
@@ -166,7 +171,5 @@ static void apm_on_deserialize(cspftp_t *session, vmem_t *input) {
         }
         fclose(f);
     }
-    (void)session;
-    (void)input;
-     dbg_warn("apm_on_deserialize: TODO");
+     dbg_warn("apm_on_deserialize: done");
 }
