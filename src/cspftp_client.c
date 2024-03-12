@@ -28,6 +28,10 @@ int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, b
         if (CSPFTP_OK != res) {
             goto get_out_please;
         }
+        if (session->request_meta.nof_intervals == 0) {
+            dbg_log("No more data to fetch.");
+            goto get_out_please;
+        }
     } else {
         cspftp_params remote_cfg = { .remote_cfg.node = server };
         res = cspftp_set_opt(session, CSPFTP_REMOTE_CFG, &remote_cfg);
