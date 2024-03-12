@@ -30,7 +30,9 @@ static void apm_on_start(cspftp_t *session) {
     session->hooks.hook_ctx = segments;
     uint32_t dummy = 0;
     /* Grow file to expected session size */
-    VMEM_MMAP_VAR(dtp_data).write(&VMEM_MMAP_VAR(dtp_data), session->total_bytes - sizeof(dummy), &dummy, sizeof(dummy));
+    if (session->total_bytes > sizeof(dummy)) {
+        VMEM_MMAP_VAR(dtp_data).write(&VMEM_MMAP_VAR(dtp_data), session->total_bytes - sizeof(dummy), &dummy, sizeof(dummy));
+    }
 }
 
 static bool apm_on_data_packet(cspftp_t *session, csp_packet_t *packet) {
