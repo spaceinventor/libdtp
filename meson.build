@@ -32,6 +32,7 @@ include = include_directories('include')
 subdir('src')
 
 if not meson.is_cross_build() or target_machine.system() == 'linux'
+  subdir('utils')
   slash_dep = subproject('slash').get_variable('slash_dep')
   subdir('apm')
   subdir('tests')
