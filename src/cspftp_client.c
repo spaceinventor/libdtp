@@ -104,7 +104,7 @@ cspftp_result start_receiving_data(cspftp_t *session)
     csp_listen(socket, 1);
     if(CSP_ERR_NONE == csp_bind(socket, 8)) {
         const uint32_t payload_s = CSPFTP_PACKET_SIZE - sizeof(uint32_t);
-        uint32_t expected_nof_packets = compute_nof_packets(session->total_bytes, payload_s);
+        uint32_t expected_nof_packets = compute_nof_packets(session->total_bytes - session->bytes_received, payload_s);
         uint32_t nof_csp_packets = 0;
 
         while ((session->bytes_received < session->total_bytes) && (idle_ms <= (session->timeout * 1000)) && packet_seq < expected_nof_packets)
