@@ -8,7 +8,7 @@ extern "C"
 {
 #endif
 /**
- * CSP FTP Public Interface.
+ * DTP Public Interface.
  */
 
     /* CSP connection  type forward declaration*/
@@ -210,22 +210,22 @@ extern "C"
     dtp_result dtp_get_opt(dtp_t *session, dtp_option option, dtp_params *param);
 
     /**
-     * Start (or resume) a CSP FTP session
+     * Start (or resume) a DTP session
      * 
      * @param[in] session pointer to a valid dtp session object
 
-     * @note a succesfully started CSP FTP transfer can be interrupted at any point, see dtp_stop_transfer()
+     * @note a succesfully started DTP transfer can be interrupted at any point, see dtp_stop_transfer()
      * 
      * @return DTP_OK if session was started sucessfully, or DTP_ERR in case of failure, see csftp_errno()
      */
     dtp_result dtp_start_transfer(dtp_t *session);
 
     /**
-     * Interrupt a CSP FTP session.
+     * Interrupt a DTP session.
      * 
      * @param[in] session pointer to a valid dtp session object
 
-     * @note a succesfully interrupted CSP FTP transfer can be resumed later, see dtp_start_transfer()
+     * @note a succesfully interrupted DTP transfer can be resumed later, see dtp_start_transfer()
      * 
      * @return DTP_OK if session was stopped sucessfully, or DTP_ERR in case of failure, see csftp_errno()
      */

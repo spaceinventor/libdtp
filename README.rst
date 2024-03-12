@@ -1,7 +1,7 @@
 DTP
 =======
 
-CSP FTP is the implementation of an interruptible, resumable, evenutally reliable data transfer protocol over CSP designed to utilize the available bandwith optimally.
+DTP is the implementation of an interruptible, resumable, eventually reliable data transfer protocol over CSP designed to utilize the available bandwith optimally.
 
 It uses the concept of `sessions` which basically encapsulate the state data associated with a data transfer operation.
 
@@ -73,7 +73,7 @@ Client-server protocol
 
 
 
-Using CSP FTP
+Using DTP
 =============
 
 Development
