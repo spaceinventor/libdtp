@@ -1,12 +1,12 @@
 #include <assert.h>
 #include <stdbool.h>
+#include <csp/csp.h>
 
-#include "cspftp/cspftp.h"
 #include "cspftp_protocol.h"
 #include "cspftp_session.h"
 #include "cspftp_log.h"
 #include "segments_utils.h"
-#include <csp/csp.h>
+#include "cspftp/cspftp.h"
 
 /**
  * @brief Type for static sessions

@@ -10,10 +10,13 @@ extern "C"
      */
 
 #include <stdint.h>
-#include <csp/csp.h>
 #include "cspftp/cspftp.h"
 #include "cspftp_protocol.h"
 
+    /* CSP connection  type forward declaration*/
+    typedef struct csp_packet_s csp_packet_t;
+    /* CSP connection  type forward declaration*/
+    typedef struct csp_conn_s csp_conn_t;
     /* received segment type forward declaration*/
     typedef struct segments_ctx_t segments_ctx_t;
     /**

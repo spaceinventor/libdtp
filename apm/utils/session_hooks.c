@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <csp/csp.h>
 #include "vmem/vmem_mmap.h"
 #include "cspftp/cspftp.h"
 #include "cspftp_log.h"

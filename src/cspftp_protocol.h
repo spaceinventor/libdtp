@@ -10,9 +10,11 @@ extern "C"
      */
 
 #include <stdint.h>
-#include <csp/csp.h>
 #include "cspftp/cspftp.h"
 #include "cspftp/platform.h"
+
+    /* CSP connection  type forward declaration*/
+    typedef struct csp_packet_s csp_packet_t;
 
     /** Transfer inverval definition */
     typedef struct {

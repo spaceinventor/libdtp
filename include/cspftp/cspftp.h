@@ -1,8 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <vmem/vmem.h>
-#include <csp/csp.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -12,6 +11,10 @@ extern "C"
  * CSP FTP Public Interface.
  */
 
+    /* CSP connection  type forward declaration*/
+    typedef struct csp_packet_s csp_packet_t;
+     /** VMEM type forward declaration */
+    typedef struct vmem_s vmem_t;
     /** Opaque handle to a CSPFTP sesssion */
     typedef struct cspftp_t cspftp_t;
 

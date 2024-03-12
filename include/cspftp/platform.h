@@ -11,7 +11,6 @@ extern "C"
 #endif
 
 #include <stdint.h>
-#include <csp/csp.h>
 #include "cspftp/cspftp.h"
 
     /**
