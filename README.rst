@@ -1,7 +1,7 @@
 DTP
 =======
 
-DTP is the implementation of an interruptible, resumable, eventually reliable data transfer protocol over CSP designed to utilize the available bandwith optimally.
+DTP (aka the **D**ata **T**ransfer **P**rotocol) is the implementation of an interruptible, resumable, eventually reliable data transfer protocol over CSP designed to utilize the available bandwith optimally.
 
 It uses the concept of `sessions` which basically encapsulate the state data associated with a data transfer operation.
 
@@ -71,10 +71,12 @@ Client-server protocol
       |               |   |
       |               |<--+
 
+Implementation
+==============
 
 
 Using DTP
-=============
+=========
 
 Development
 ===========
