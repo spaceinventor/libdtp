@@ -140,14 +140,14 @@ dtp_result dtp_release_session(dtp_t *session)
     {
         if (session == &(static_sessions[i].session))
         {
+            if(session->hooks.on_release) {
+                session->hooks.on_release(session);
+            }
             csp_close(static_sessions[i].session.conn);
             /* Save session last error in case somebody asks after releasing */
             last_error = static_sessions[i].session.errno;
             static_sessions[i].in_use = false;
             static_sessions[i].session.errno = DTP_NO_ERR;
-            if(session->hooks.on_release) {
-                session->hooks.on_release(session);
-            }
             return DTP_OK;
         }
     }
