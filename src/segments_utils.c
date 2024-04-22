@@ -145,3 +145,16 @@ void for_each_segment(segments_ctx_t *ctx, void (*cb)(uint32_t idx, uint32_t sta
         }
     }
 }
+
+void add_segment(segments_ctx_t *ctx, uint32_t start, uint32_t end) {
+    segment_t *s = malloc(sizeof(segment_t));
+    s->start = start;
+    s->end = end;
+    s->next = 0;
+    if (0 == ctx->segments) {
+        ctx->segments = s;
+    } else {
+        ctx->segments->next = s;
+    }
+    ctx->nof_segments++;
+}

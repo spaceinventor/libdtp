@@ -56,6 +56,14 @@ extern void free_segments(segments_ctx_t *ctx);
  */
 extern void for_each_segment(segments_ctx_t *ctx, void (*cb)(uint32_t idx, uint32_t start, uint32_t end, void *cb_ctx), void *cb_ctx);
 
+/**
+ * Manually add a segment
+ * @param ctx self-explanatory
+ * @param start of the segment range in bytes
+ * @param end of the segment range in bytes
+ */
+extern void add_segment(segments_ctx_t *ctx, uint32_t start, uint32_t end);
+
 #ifdef __cplusplus
 }
 #endif
