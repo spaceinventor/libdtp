@@ -16,7 +16,10 @@
 					"${workspaceFolder}/build"
 				]
 			},
-			"group": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
 			"detail": "compiler: /usr/bin/aarch64-linux-gnu-gcc"
 		}
 	]

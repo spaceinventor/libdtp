@@ -5,12 +5,61 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "(gdb) Session Meta utils",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/builddir/utils/dtp-session-meta",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "Meson build",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "DTP Client garfield",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:HOME}/.local/bin/csh",
+            "args": ["-i", "~/garfield_init.csh"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
             "name": "(gdb) DTP APM Client",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/home/jbl/.local/bin/csh",
+            "program": "${env:HOME}/.local/bin/csh",
             "args": ["-i", "conf/dtp_client.csh"],
-            "stopAtEntry": true,
+            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
@@ -32,9 +81,9 @@
             "name": "(gdb) DTP APM Server",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/home/jbl/.local/bin/csh",
+            "program": "${env:HOME}/.local/bin/csh",
             "args": ["-i", "conf/dtp_server.csh"],
-            "stopAtEntry": true,
+            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
@@ -58,7 +107,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/tests/test_integration_1",
             "args": [],
-            "stopAtEntry": true,
+            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "preLaunchTask": "Meson build",
@@ -83,7 +132,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/${command:unityExplorer.debugTestExecutable}",
             "args": [],
-            "stopAtEntry": true,
+            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
