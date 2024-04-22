@@ -60,6 +60,7 @@ dtp_opt_session_hooks_cfg default_session_hooks __attribute__((weak)) = {
     .on_serialize = default_on_serialize,
     .on_deserialize = default_on_deserialize,
     .on_release = default_on_session_release,
+    .hook_ctx = 0
 };
 
 
