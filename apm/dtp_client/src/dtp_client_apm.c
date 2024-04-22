@@ -63,4 +63,28 @@ int dtp_client(struct slash *s)
     return SLASH_SUCCESS;
 }
 
-slash_command(dtp_client, dtp_client, "-s", "DTP client");
+
+int dtp_info(struct slash *s)
+{
+    optparse_t * parser = optparse_new("dtp_info", "<name>");
+    optparse_add_help(parser);
+    optparse_parse(parser, s->argc - 1, ((const char **)s->argv) + 1);
+    optparse_del(parser);
+    dtp_t session = { 0 };
+    apm_session_hooks.on_deserialize(&session, NULL);
+        printf("  remote address: %u\n", session.remote_cfg.node);
+        printf("  timeout: %u\n", session.request_meta.timeout);
+        printf("  throughput: %u Kb/s\n", session.request_meta.throughput);
+        printf("  payload id: %u\n", session.request_meta.payload_id);
+        printf("  bytes_received: %u\n", session.bytes_received);
+        printf("  payload size: %u\n", session.payload_size);
+        printf("  Missing: %u\n", session.payload_size - session.bytes_received);
+        printf("  Missing intervals: %u\n", session.request_meta.nof_intervals);
+        for(uint8_t i = 0; i < session.request_meta.nof_intervals; i++) {
+            printf("\t\tinterval #%u: start=%u, end=%u\n", i, session.request_meta.intervals[i].start, session.request_meta.intervals[i].end);
+        }
+    return SLASH_SUCCESS;
+}
+
+slash_command(dtp_client, dtp_client, "", "DTP client");
+slash_command(dtp_info, dtp_info, "", "Show information about a saved DTP session");
