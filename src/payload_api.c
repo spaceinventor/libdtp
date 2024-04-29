@@ -1,13 +1,27 @@
 #include <string.h>
 #include <dtp/platform.h>
 
+static const char test_data[] = "0123456789ABCDE";
 static uint32_t payload_read(uint8_t payload_id, uint32_t offset, void *output, uint32_t size) {
     uint32_t res = 0;
     switch(payload_id) {
         case 0:
-        default:
-            memset(output, 0x30 + payload_id, size);
+        default: {
+            uint32_t so_far = 0;
+            if (so_far % sizeof(test_data) == 0) {
+                while(so_far < size) {
+                    memcpy(output + so_far, test_data, sizeof(test_data));
+                    so_far += sizeof(test_data);
+                }
+            } else {
+                while(so_far < (size - sizeof(test_data))) {
+                    memcpy(output + so_far, test_data, sizeof(test_data));
+                    so_far += sizeof(test_data);
+                }
+                memcpy(output + so_far, test_data, so_far % sizeof(test_data));
+            }
             res = size;
+        }
         break;
     }
     return res;
