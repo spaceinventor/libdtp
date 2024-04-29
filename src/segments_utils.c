@@ -21,14 +21,33 @@ typedef struct segments_ctx_t {
 
 static void append_segment(segments_ctx_t *ctx) {
     segment_t *runner = ctx->segments;
-    ctx->nof_segments++;
     if(!runner) {
         ctx->segments = ctx->cur_segment;
+        ctx->nof_segments++;
     } else {
-        while(runner->next) {
+        while(runner) {
+            if(ctx->cur_segment->start >= runner->start && ctx->cur_segment->start <= runner->end) {
+                if(ctx->cur_segment->end >= runner->end) {
+                    // Current segment overlaps parially or completely with a previously dowloaded segment,
+                    // update the existing segment and discad "cur_segment"
+                    runner->end = ctx->cur_segment->end;
+                    free(ctx->cur_segment);
+                    ctx->cur_segment = 0;
+                    break;
+                }
+            } else if(ctx->cur_segment->start <= runner->start && ctx->cur_segment->end >= runner->start) {
+                runner->start = ctx->cur_segment->start;
+                free(ctx->cur_segment);
+                ctx->cur_segment = 0;
+                break;
+            }
+            if(!runner->next) {
+                runner->next = ctx->cur_segment;
+                ctx->nof_segments++;
+                break;
+            }
             runner = runner->next;
         }
-        runner->next = ctx->cur_segment;
     }
 }
 
@@ -85,7 +104,7 @@ segments_ctx_t *get_complement_segment(segments_ctx_t *ctx) {
                 start = runner->end;
                 runner = runner->next;
                 continue;
-            } else if(start < runner->start) {
+            } else if(start < (runner->start - 1)) {
                 end = runner->start;
                 complements->cur_segment = malloc(sizeof(segment_t));
                 complements->cur_segment->start = start;
@@ -97,13 +116,22 @@ segments_ctx_t *get_complement_segment(segments_ctx_t *ctx) {
             runner = runner->next;
         }
     }
-    if (end != 0 && end < start) {
-        complements->cur_segment = malloc(sizeof(segment_t));
-        complements->cur_segment->start = start;
-        complements->cur_segment->end = 0xffffffff;
-        complements->cur_segment->next = 0;
-        append_segment(complements);
+    if(start != 0xffffffff) {
+        if (end != 0 && end < start) {
+            complements->cur_segment = malloc(sizeof(segment_t));
+            complements->cur_segment->start = start;
+            complements->cur_segment->end = 0xffffffff;
+            complements->cur_segment->next = 0;
+            append_segment(complements);
+        }
     }
+    // else {
+    //     complements->cur_segment = malloc(sizeof(segment_t));
+    //     complements->cur_segment->start = end;
+    //     complements->cur_segment->end = 0xffffffff;
+    //     complements->cur_segment->next = 0;
+    //     append_segment(complements);
+    // }
     return complements;
 }
 
