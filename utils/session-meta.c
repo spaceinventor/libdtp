@@ -12,7 +12,7 @@ void parse_meta_data(FILE *f, dtp_t *session) {
     fread(&session->request_meta.throughput, sizeof(session->request_meta.throughput), 1, f);
     fread(&session->request_meta.payload_id, sizeof(session->request_meta.payload_id), 1, f);
     fread(&session->bytes_received, sizeof(session->bytes_received), 1, f);
-
+    fread(&session->payload_size, sizeof(session->payload_size), 1, f);
     segments_ctx_t *ctx = init_segments_ctx();
 
     uint32_t start;
