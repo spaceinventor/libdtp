@@ -6,7 +6,6 @@
 #include "dtp_session.h"
 #include "segments_utils.h"
 
-VMEM_DEFINE_MMAP(dtp_session, "dtp_session.json", "dtp_session.json", 1024);
 VMEM_DEFINE_MMAP(dtp_session_meta, "dtp_session_meta.bin", "dtp_session_meta.bin", 1024);
 VMEM_DEFINE_MMAP(dtp_data, "dtp_data.bin", "dtp_data.bin", 1024);
 
@@ -29,8 +28,8 @@ const dtp_opt_session_hooks_cfg apm_session_hooks = {
 
 static void apm_on_start(dtp_t *session) {
     if (!session->hooks.hook_ctx) {
-    segments_ctx_t *segments = init_segments_ctx();
-    session->hooks.hook_ctx = segments;
+        segments_ctx_t *segments = init_segments_ctx();
+        session->hooks.hook_ctx = segments;
     }
     uint32_t dummy = 0;
     /* Grow file to expected session size */
@@ -103,14 +102,14 @@ static void apm_on_serialize(dtp_t *session, vmem_t *output) {
         fwrite(&session->payload_size, sizeof(session->payload_size), 1, f);
         if(session->request_meta.nof_intervals) {
             segments_ctx_t *segments = (segments_ctx_t *)session->hooks.hook_ctx;
-        if(segments) {
-            // number of missing segments
-            uint8_t nof_segments = 0;
-            segments_ctx_t *missing_segments = get_complement_segment(segments);
-            for_each_segment(missing_segments, segment_counter, &nof_segments);
-            fwrite(&nof_segments, sizeof(nof_segments), 1, f);
-            for_each_segment(missing_segments, write_segment_to_file, f);
-            free_segments(missing_segments);
+            if(segments) {
+                // number of missing segments
+                uint8_t nof_segments = 0;
+                segments_ctx_t *missing_segments = get_complement_segment(segments);
+                for_each_segment(missing_segments, segment_counter, &nof_segments);
+                fwrite(&nof_segments, sizeof(nof_segments), 1, f);
+                for_each_segment(missing_segments, write_segment_to_file, f);
+                free_segments(missing_segments);
             }
         }
         fclose(f);
