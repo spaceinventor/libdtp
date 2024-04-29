@@ -65,7 +65,7 @@ extern "C"
     } dtp_opt_remote_cfg;
 
     typedef struct {
-        uint16_t value; /// MAX Throughout in MegaBits/s (1 Megabit = 0.125 Mega Bytes)
+        uint16_t value; /// MAX Throughout in Kb/s
     } dtp_opt_throughput_cfg;
 
     typedef struct {

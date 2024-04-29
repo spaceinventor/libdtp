@@ -23,16 +23,19 @@ const dtp_opt_session_hooks_cfg apm_session_hooks = {
     .on_end = apm_on_end,
     .on_serialize = apm_on_serialize,
     .on_deserialize = apm_on_deserialize,
-    .on_release = apm_on_release
+    .on_release = apm_on_release,
+    .hook_ctx = 0
 };
 
 static void apm_on_start(dtp_t *session) {
+    if (!session->hooks.hook_ctx) {
     segments_ctx_t *segments = init_segments_ctx();
     session->hooks.hook_ctx = segments;
+    }
     uint32_t dummy = 0;
     /* Grow file to expected session size */
-    if (session->total_bytes > sizeof(dummy)) {
-        VMEM_MMAP_VAR(dtp_data).write(&VMEM_MMAP_VAR(dtp_data), session->total_bytes - sizeof(dummy), &dummy, sizeof(dummy));
+    if (session->payload_size > sizeof(dummy)) {
+        VMEM_MMAP_VAR(dtp_data).write(&VMEM_MMAP_VAR(dtp_data), session->payload_size - sizeof(dummy), &dummy, sizeof(dummy));
     }
 }
 
@@ -73,6 +76,7 @@ static void apm_on_end(dtp_t *session) {
 static void apm_on_release(dtp_t *session) {
     segments_ctx_t *segments = (segments_ctx_t *)session->hooks.hook_ctx;
     free_segments(segments);
+    session->hooks.hook_ctx = 0;
 }
 
 static void segment_counter(uint32_t _1, uint32_t _2, uint32_t _3, void *counter) {
@@ -87,7 +91,6 @@ static void write_segment_to_file(uint32_t _1, uint32_t start, uint32_t end, voi
 static void apm_on_serialize(dtp_t *session, vmem_t *output) {
     FILE *f = fopen("dtp_session_meta.bin", "wb");
     if (f) {
-        segments_ctx_t *segments = (segments_ctx_t *)session->hooks.hook_ctx;
         // For future development, stamp the version as the first 32bits in the file
         fwrite(&DTP_SESSION_VERSION, sizeof(DTP_SESSION_VERSION), 1, f);
         fwrite(&session->remote_cfg.node, sizeof(session->remote_cfg.node), 1, f);
@@ -97,7 +100,9 @@ static void apm_on_serialize(dtp_t *session, vmem_t *output) {
         fwrite(&session->request_meta.throughput, sizeof(session->request_meta.throughput), 1, f);
         fwrite(&session->request_meta.payload_id, sizeof(session->request_meta.payload_id), 1, f);
         fwrite(&session->bytes_received, sizeof(session->bytes_received), 1, f);
-        fwrite(&session->total_bytes, sizeof(session->total_bytes), 1, f);
+        fwrite(&session->payload_size, sizeof(session->payload_size), 1, f);
+        if(session->request_meta.nof_intervals) {
+            segments_ctx_t *segments = (segments_ctx_t *)session->hooks.hook_ctx;
         if(segments) {
             // number of missing segments
             uint8_t nof_segments = 0;
@@ -106,6 +111,7 @@ static void apm_on_serialize(dtp_t *session, vmem_t *output) {
             fwrite(&nof_segments, sizeof(nof_segments), 1, f);
             for_each_segment(missing_segments, write_segment_to_file, f);
             free_segments(missing_segments);
+            }
         }
         fclose(f);
     } else {
@@ -116,6 +122,9 @@ static void apm_on_serialize(dtp_t *session, vmem_t *output) {
 
 static void apm_on_deserialize(dtp_t *session, vmem_t *input) {
     FILE *f = fopen("dtp_session_meta.bin", "rb");
+    segments_ctx_t *ctx;
+    uint32_t start;
+    uint32_t end;
     if (f) {
         uint32_t buffer = 0;
         fread(&buffer, sizeof(DTP_SESSION_VERSION), 1, f);
@@ -128,14 +137,24 @@ static void apm_on_deserialize(dtp_t *session, vmem_t *input) {
             fread(&session->request_meta.throughput, sizeof(session->request_meta.throughput), 1, f);
             fread(&session->request_meta.payload_id, sizeof(session->request_meta.payload_id), 1, f);
             fread(&session->bytes_received, sizeof(session->bytes_received), 1, f);
-            fread(&session->total_bytes, sizeof(session->total_bytes), 1, f);
-            // number of segments
+            fread(&session->payload_size, sizeof(session->payload_size), 1, f);
 
+            ctx = init_segments_ctx();
             fread(&session->request_meta.nof_intervals, sizeof(session->request_meta.nof_intervals), 1, f);
             for (uint32_t i = 0; i < session->request_meta.nof_intervals; i++) {
                 fread(&session->request_meta.intervals[i].start, sizeof(uint32_t), 1, f);
                 fread(&session->request_meta.intervals[i].end, sizeof(uint32_t), 1, f);
+                start = session->request_meta.intervals[i].start;
+                if (session->request_meta.intervals[i].end != 0xffffffff) {
+                    end = session->request_meta.intervals[i].end;
+                } else {
+                    end = session->request_meta.intervals[i].end;
+                }
+                add_segment(ctx, start, end);                
             }
+            segments_ctx_t *complements = get_complement_segment(ctx);
+            free_segments(ctx);
+            session->hooks.hook_ctx = complements;
         }
         fclose(f);
     }

@@ -38,8 +38,8 @@ dtp_result read_remote_meta_resp(dtp_t *session)
     {
         res = DTP_OK;
         dtp_meta_resp_t *meta_resp = (dtp_meta_resp_t *)packet->data;
-        session->total_bytes = meta_resp->size_in_bytes;
-        dbg_log("Setting session total bytes to %u", session->total_bytes);
+        session->payload_size = meta_resp->total_payload_size;
+        dbg_log("Setting session total bytes to %u", meta_resp->size_in_bytes);
         csp_buffer_free(packet);
     } else {
         session->errno = DTP_CONNECTION_FAILED;

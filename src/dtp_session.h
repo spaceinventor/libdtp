@@ -28,7 +28,7 @@ extern "C"
         dtp_opt_remote_cfg remote_cfg;
         dtp_opt_session_hooks_cfg hooks;
         uint32_t bytes_received;
-        uint32_t total_bytes;
+        uint32_t payload_size;
         uint32_t start_ts;
         uint32_t end_ts;
         dtp_errno_t errno;

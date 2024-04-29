@@ -1,9 +1,9 @@
+#include <stdlib.h>
 #include "dtp_log.h"
 #include "dtp/dtp.h"
 #include "dtp_internal_api.h"
 #include <csp/csp.h>
 #include <csp/arch/csp_time.h>
-#include <vmem/vmem_ram.h>
 
 #include "dtp/dtp.h"
 #include "dtp_session.h"
@@ -32,24 +32,23 @@ int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, b
             dbg_log("No more data to fetch.");
             goto get_out_please;
         }
-    } else {
-        dtp_params remote_cfg = { .remote_cfg.node = server };
-        res = dtp_set_opt(session, DTP_REMOTE_CFG, &remote_cfg);
-        if (DTP_OK != res) {
-            goto get_out_please;
-        }
+    }
+    dtp_params remote_cfg = { .remote_cfg.node = server };
+    res = dtp_set_opt(session, DTP_REMOTE_CFG, &remote_cfg);
+    if (DTP_OK != res) {
+        goto get_out_please;
+    }
 
-        remote_cfg.throughput.value = max_throughput;
-        res = dtp_set_opt(session, DTP_THROUGHPUT_CFG, &remote_cfg);
-        if (DTP_OK != res) {
-            goto get_out_please;
-        }
+    remote_cfg.throughput.value = max_throughput;
+    res = dtp_set_opt(session, DTP_THROUGHPUT_CFG, &remote_cfg);
+    if (DTP_OK != res) {
+        goto get_out_please;
+    }
 
-        remote_cfg.timeout.value = timeout;
-        res = dtp_set_opt(session, DTP_TIMEOUT_CFG, &remote_cfg);
-        if (DTP_OK != res) {
-            goto get_out_please;
-        }
+    remote_cfg.timeout.value = timeout;
+    res = dtp_set_opt(session, DTP_TIMEOUT_CFG, &remote_cfg);
+    if (DTP_OK != res) {
+        goto get_out_please;
     }
 
     res = dtp_start_transfer(session);
@@ -100,6 +99,7 @@ dtp_result start_receiving_data(dtp_t *session)
     session->start_ts = csp_get_s();
     uint32_t now = session->start_ts;
     socket->opts = CSP_SO_CONN_LESS;
+    char progress_str[32] = { 0 };
 
     if(session->hooks.on_start) {
         session->hooks.on_start(session);
@@ -108,10 +108,11 @@ dtp_result start_receiving_data(dtp_t *session)
     csp_listen(socket, 1);
     if(CSP_ERR_NONE == csp_bind(socket, 8)) {
         const uint32_t payload_s = DTP_PACKET_SIZE - sizeof(uint32_t);
-        uint32_t expected_nof_packets = compute_nof_packets(session->total_bytes - session->bytes_received, payload_s);
+        uint32_t expected_nof_packets = compute_nof_packets(session->payload_size - session->bytes_received, payload_s);
         uint32_t nof_csp_packets = 0;
-
-        while ((session->bytes_received < session->total_bytes) && (idle_ms <= (session->timeout * 1000)) && packet_seq < expected_nof_packets)
+        uint32_t received_so_far = 0;
+        uint8_t nof_ch_to_remove = 0;
+        while ((idle_ms <= (session->timeout * 1000)) && nof_csp_packets < expected_nof_packets)
         {
             packet = csp_recvfrom(socket, 1000);
             if(NULL == packet) {
@@ -123,6 +124,7 @@ dtp_result start_receiving_data(dtp_t *session)
             now = csp_get_s();
             idle_ms = 0;
             session->bytes_received += packet->length - sizeof(uint32_t);
+            received_so_far += packet->length - sizeof(uint32_t);
             packet_seq = packet->data32[0] / (DTP_PACKET_SIZE - sizeof(uint32_t));
             if(session->hooks.on_data_packet) {
                 if (false == session->hooks.on_data_packet(session, packet)) {
@@ -131,6 +133,15 @@ dtp_result start_receiving_data(dtp_t *session)
             }
             current_seq++;
             csp_buffer_free(packet);
+            if(nof_csp_packets % 100 == 0) {
+                progress_str[0] = '\0';
+                char *tmp = progress_str;
+                for (uint8_t i=0; i < nof_ch_to_remove; i++) {
+                    tmp += sprintf(tmp, "%s", "\b");
+                }
+                nof_ch_to_remove = sprintf(tmp, "%lu", received_so_far);
+                csp_print(progress_str);
+            }
         }
         if (idle_ms >= (session->timeout * 1000)) {
             dbg_warn("No data received for %u ms, bailing out", idle_ms);
@@ -144,7 +155,7 @@ dtp_result start_receiving_data(dtp_t *session)
     }
     uint32_t duration = now - session->start_ts;
     duration = duration?duration:1;
-    dbg_log("Received %lu bytes, expected: %lu, last seq: %lu, status: %d", session->bytes_received, session->total_bytes, packet_seq, result);
-    dbg_log("Session duration: %u sec, avg throughput: %u bytes/sec", duration, session->bytes_received / duration);
+    dbg_log("Received %lu bytes, last seq: %lu, status: %d", session->bytes_received, packet_seq, result);
+    dbg_log("Session duration: %u sec, avg throughput: %u Kb/sec", duration, (session->bytes_received / duration) / 1024);
     return result;
 }

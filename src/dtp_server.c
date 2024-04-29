@@ -33,8 +33,10 @@ static void dtp_server_run(bool *keep_running)
         }
         dbg_log("Got meta data request");
         packet = setup_server_transfer(&server_transfer_ctx, csp_conn_src(conn), packet);
+        server_transfer_ctx.keep_running = keep_running;
         if(packet) {
             csp_send(conn, packet);
+            // usleep(500000);
             start_sending_data(&server_transfer_ctx);
         }
         csp_close(conn);
@@ -49,12 +51,10 @@ static uint32_t compute_transfer_size(dtp_server_transfer_ctx_t *ctx) {
     for (uint8_t i=0; i < ctx->request.nof_intervals; i++) {
         cur_int = &ctx->request.intervals[i];
         if(cur_int->end == 0xFFFFFFFF) {
-            /* This means the whole shebang */            
-            size = ctx->payload_meta.size;
-            cur_int->end = size;
-            break;
+            /* This means the whole shebang */
+            size += ctx->payload_meta.size - cur_int->start * (DTP_PACKET_SIZE - sizeof(uint32_t));
         } else {
-            size += cur_int->end - cur_int->start;
+            size += cur_int->end  * (DTP_PACKET_SIZE - sizeof(uint32_t)) - cur_int->start * (DTP_PACKET_SIZE - sizeof(uint32_t));
         }
     }
     return size;
@@ -66,56 +66,48 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
     csp_packet_t *packet;
     uint32_t bytes_sent = 0;
     uint32_t nof_csp_packets = 0;
-    dbg_log("Start sending data, setting max throughput to %u MBits/sec", ctx->request.throughput);
+    dbg_log("Start sending data, setting max throughput to %u Kb/sec", ctx->request.throughput);
     uint32_t first_packet_ts = csp_get_ms();
     uint32_t now;
     uint32_t current_throughput = 0;
-    uint32_t max_throughput = ctx->request.throughput * 1000 / 8; // In bytes/second
+    uint32_t max_throughput = ctx->request.throughput * 1024; // In bytes/second
     uint32_t packets_second = (max_throughput / DTP_PACKET_SIZE);
     dbg_log("Throughput in packets/sec: %u", packets_second);
 
     bool throttling = false;
 
-    dbg_log("===========================================");
-    dbg_log("NOF intervals: %u", ctx->request.nof_intervals);
-    for(uint8_t i = 0; i < ctx->request.nof_intervals; i++)
+    dbg_log("Number of intervals: %u", ctx->request.nof_intervals);
+    for(uint8_t i = 0; i < ctx->request.nof_intervals && *(ctx->keep_running); i++)
     {
-        uint32_t interval_start = ctx->request.intervals[i].start;
-        uint32_t interval_stop = ctx->request.intervals[i].end;
-        uint32_t bytes_in_interval = interval_stop - interval_start;
-        dbg_log("interval_start: %u", interval_start);
-        dbg_log("interval_stop: %u", interval_stop);
-        dbg_log("bytes_in_interval: %u", bytes_in_interval);
-    }
-    dbg_log("===========================================");
-
-    for(uint8_t i = 0; i < ctx->request.nof_intervals; i++)
-    {
-        uint32_t interval_start = ctx->request.intervals[i].start;
-        uint32_t interval_stop = ctx->request.intervals[i].end;
-        uint32_t bytes_in_interval = interval_stop - interval_start;
+        uint32_t interval_start = ctx->request.intervals[i].start * (DTP_PACKET_SIZE - sizeof(uint32_t));
+        uint32_t interval_stop = ctx->request.intervals[i].end * (DTP_PACKET_SIZE - sizeof(uint32_t));
         uint32_t sent_in_interval = 0;
-        dbg_log("interval_start: %u", interval_start);
-        dbg_log("interval_stop: %u", interval_stop);
+        bytes_sent = interval_start;
+        if(interval_stop > ctx->payload_meta.size) {
+            interval_stop = ctx->payload_meta.size;
+            uint32_t fixed_end;
+            if (interval_stop % (DTP_PACKET_SIZE - sizeof(uint32_t)) != 0) {
+                fixed_end = interval_stop / (DTP_PACKET_SIZE - sizeof(uint32_t)) + 1;
+            } else {
+                fixed_end = interval_stop / (DTP_PACKET_SIZE - sizeof(uint32_t));
+            }
+            ctx->request.intervals[i].end = fixed_end;
+        }        
+        uint32_t bytes_in_interval = interval_stop - interval_start;
+        dbg_log("interval_start: %u (seq: %u)", interval_start, ctx->request.intervals[i].start);
+        dbg_log("interval_stop: %u (seq: %u)", interval_stop, ctx->request.intervals[i].end);
         dbg_log("bytes_in_interval: %u", bytes_in_interval);
-        while(sent_in_interval < bytes_in_interval) {
+        while(sent_in_interval < bytes_in_interval && *(ctx->keep_running)) {
 
             now = csp_get_ms();
-            if((now - first_packet_ts) < 500) {
+            if((now - first_packet_ts) < 50) {
                 // TODO: Could sleep instead of spinning the CPU for now - first_packet_ts millisenconds,
                 // this requires a platform-agnostic sleep mechanism.
                 continue;
             }
             if(!throttling) {
-                current_throughput = compute_throughput(now, first_packet_ts, bytes_sent) * 1000;
-                throttling = current_throughput > max_throughput;
-                if (throttling) {
-                    // TODO: Could sleep instead of spinning the CPU for current_throughput - max_throughput millisenconds,
-                    // this requires a platform-agnostic sleep mechanism.
-                    continue;
-                }
-            } else {
-                current_throughput = compute_throughput(now, first_packet_ts, bytes_sent) * 1000;
+                current_throughput = compute_throughput(now, first_packet_ts, sent_in_interval) * 1000 * 1000;
+                dbg_log("Throughput: %ul, %ul", current_throughput, max_throughput);
                 throttling = current_throughput > max_throughput;
                 if (throttling) {
                     // TODO: Could sleep instead of spinning the CPU for current_throughput - max_throughput millisenconds,
@@ -139,14 +131,17 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
             ctx->payload_meta.read(ctx->request.payload_id, bytes_sent, packet->data + sizeof(uint32_t), packet->length - sizeof(uint32_t));
             bytes_sent += packet->length - sizeof(uint32_t);
             sent_in_interval += packet->length - sizeof(uint32_t);
-            // TODO: The priority parameter might need to be adjusted according to payload meta-data, though it may not any any impact
+            // TODO: The priority parameter might need to be adjusted according to payload meta-data, though it may not have any impact
             // on actual speed transfer at all.
             csp_sendto(CSP_PRIO_NORM, ctx->destination, 8, 0, 0, packet);
         }
         dbg_log("sent_in_interval: %u", sent_in_interval);
     }
+    if(!*(ctx->keep_running)) {
+        dbg_warn("Transfer was interrupted");
+    }
     dbg_warn("nof_csp_packets= %lu", nof_csp_packets);
-    dbg_warn("Server transfer completed, sent %lu bytes in %lu packets", bytes_sent, nof_csp_packets);
+    dbg_warn("Server transfer completed, sent %lu packets", nof_csp_packets);
     return result;
 }
 

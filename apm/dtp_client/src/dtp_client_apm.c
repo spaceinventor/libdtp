@@ -26,7 +26,7 @@ int dtp_client(struct slash *s)
         unsigned int throughput;
         unsigned int timeout;
     } dtp_client_opts_t;
-    dtp_client_opts_t opts = { .color = 0, .server = 0, .throughput = 8, .timeout = 5 };
+    dtp_client_opts_t opts = { .color = 0, .server = 0, .throughput = 1024, .timeout = 5 };
     optparse_t * parser = optparse_new("dtp_client", "<name>");
     /* This is very important, else the default no-op hooks will be used */
     default_session_hooks = apm_session_hooks;
@@ -35,7 +35,7 @@ int dtp_client(struct slash *s)
     optparse_add_set(parser, 'c', "color", 1, &opts.color, "enable color output");
     optparse_add_set(parser, 'r', "resume", 1, &opts.resume, "resume previous session");
 	optparse_add_unsigned(parser, 's', "server", "CSP address", 10, &opts.server, "CSP Address of the DT server to retrieve data from (default = 0))");
-    optparse_add_unsigned(parser, 't', "throughput", "Transfer throughput", 10, &opts.throughput, "Max throughput expressed in MBits/sec (default = 8Mbits/sec))");
+    optparse_add_unsigned(parser, 't', "throughput", "Transfer throughput", 10, &opts.throughput, "Max throughput expressed in Kb/s (default = 1024Kb/sec))");
     optparse_add_unsigned(parser, 'T', "timeout", "Timeout", 10, &opts.timeout, "Idle timeout (default = 5)");
 
     int argi = optparse_parse(parser, s->argc - 1, ((const char **)s->argv) + 1);
@@ -46,8 +46,7 @@ int dtp_client(struct slash *s)
 
     optparse_del(parser);
     dtp_t *session;
-    dtp_result result = dtp_client_main(opts.server, opts.throughput, opts.timeout, opts.resume, &session);
-    dtp_serialize_session(session, &VMEM_MMAP_VAR(dtp_session));
+    dtp_result result = dtp_client_main(opts.server, opts.throughput, opts.timeout, opts.resume, &session);    
 
     if (DTP_ERR == result) {
         switch(dtp_errno(NULL)) {
@@ -58,6 +57,7 @@ int dtp_client(struct slash *s)
                 return SLASH_SUCCESS;
         }
     } else {
+        dtp_serialize_session(session, &VMEM_MMAP_VAR(dtp_session));
         dtp_release_session(session);
     }
     return SLASH_SUCCESS;

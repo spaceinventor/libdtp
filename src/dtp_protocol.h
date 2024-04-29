@@ -25,7 +25,7 @@ extern "C"
     /** Transfer request */
     typedef struct
     {
-        uint16_t throughput; /** max server throughput in Megabits/seconds */
+        uint16_t throughput; /** max server throughput in Kb/second */
         uint8_t timeout; /** number of seconds with no received packets that will stop the session */
         uint8_t nof_intervals; /** Number of segments to transfer, see the intervals below */
         uint8_t payload_id; /** Payload ID, conceptual identifer for the payload to retrieve, semantic is entirely server-specific */
@@ -35,6 +35,7 @@ extern "C"
     typedef struct {
         uint16_t destination; /** Destination port */
         uint32_t size_in_bytes; /** total number of bytes to transfer */
+        bool *keep_running; /** Flag indicating if the transfer should continue or not */
         dtp_meta_req_t request; /** List of intervals to transfer */
         dftp_payload_meta_t payload_meta; /** Payload info, see dftp_payload_meta_t */
     } dtp_server_transfer_ctx_t;
