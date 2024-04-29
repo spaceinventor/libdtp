@@ -36,7 +36,6 @@ static void dtp_server_run(bool *keep_running)
         server_transfer_ctx.keep_running = keep_running;
         if(packet) {
             csp_send(conn, packet);
-            // usleep(500000);
             start_sending_data(&server_transfer_ctx);
         }
         csp_close(conn);
@@ -105,15 +104,13 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
                 // this requires a platform-agnostic sleep mechanism.
                 continue;
             }
-            if(!throttling) {
-                current_throughput = compute_throughput(now, first_packet_ts, sent_in_interval) * 1000 * 1000;
-                dbg_log("Throughput: %ul, %ul", current_throughput, max_throughput);
-                throttling = current_throughput > max_throughput;
-                if (throttling) {
-                    // TODO: Could sleep instead of spinning the CPU for current_throughput - max_throughput millisenconds,
-                    // this requires a platform-agnostic sleep mechanism.
-                    continue;
-                }
+            current_throughput = compute_throughput(now, first_packet_ts, sent_in_interval) * 1000;
+            // dbg_log("Throughput: %u, %u", current_throughput, max_throughput);
+            throttling = current_throughput > max_throughput;
+            if (throttling) {
+                // TODO: Could sleep instead of spinning the CPU for current_throughput - max_throughput millisenconds,
+                // this requires a platform-agnostic sleep mechanism.
+                continue;
             }
             packet = csp_buffer_get(0);
             if(NULL == packet) {
