@@ -1,14 +1,11 @@
 #include <stdio.h>
 #include <apm/apm.h>
-#include <vmem/vmem_mmap.h>
 #include <slash/slash.h>
 #include <slash/optparse.h>
 #include "dtp/dtp.h"
 #include "segments_utils.h"
 #include "dtp_log.h"
 #include "dtp_session.h"
-
-extern  vmem_t VMEM_MMAP_VAR(dtp_session);
 
 int apm_init(void)
 {
@@ -57,7 +54,7 @@ int dtp_client(struct slash *s)
                 return SLASH_SUCCESS;
         }
     } else {
-        dtp_serialize_session(session, &VMEM_MMAP_VAR(dtp_session));
+        dtp_serialize_session(session, NULL);
         dtp_release_session(session);
     }
     return SLASH_SUCCESS;
