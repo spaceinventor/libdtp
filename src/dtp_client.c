@@ -1,13 +1,13 @@
 #include <stdlib.h>
-#include "dtp_log.h"
+#include "dtp/dtp_log.h"
 #include "dtp/dtp.h"
 #include "dtp_internal_api.h"
 #include <csp/csp.h>
 #include <csp/arch/csp_time.h>
 
 #include "dtp/dtp.h"
-#include "dtp_session.h"
-#include "dtp_log.h"
+#include "dtp/dtp_session.h"
+#include "dtp/dtp_log.h"
 
 int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, bool resume, dtp_t **out_session) {
     dtp_t *session = NULL;
@@ -139,7 +139,7 @@ dtp_result start_receiving_data(dtp_t *session)
                 for (uint8_t i=0; i < nof_ch_to_remove; i++) {
                     tmp += sprintf(tmp, "%s", "\b");
                 }
-                nof_ch_to_remove = sprintf(tmp, "%lu", received_so_far);
+                nof_ch_to_remove = sprintf(tmp, "%"PRIu32, received_so_far);
                 csp_print(progress_str);
             }
         }

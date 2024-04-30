@@ -2,10 +2,9 @@
 #include <stdbool.h>
 #include <csp/csp.h>
 
-#include "dtp_protocol.h"
-#include "dtp_session.h"
-#include "dtp_log.h"
-#include "segments_utils.h"
+#include "dtp/dtp_protocol.h"
+#include "dtp/dtp_session.h"
+#include "dtp/dtp_log.h"
 #include "dtp/dtp.h"
 
 /**

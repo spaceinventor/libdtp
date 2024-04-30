@@ -2,8 +2,8 @@
 #include <csp/arch/csp_time.h>
 #include "dtp/dtp.h"
 #include "dtp_internal_api.h"
-#include "dtp_protocol.h"
-#include "dtp_log.h"
+#include "dtp/dtp_protocol.h"
+#include "dtp/dtp_log.h"
 
 static void dtp_server_run(bool *keep_running)
 {

@@ -11,7 +11,7 @@ extern "C"
 
 #include <stdint.h>
 #include "dtp/dtp.h"
-#include "dtp_protocol.h"
+#include "dtp/dtp_protocol.h"
 
     /* CSP connection  type forward declaration*/
     typedef struct csp_packet_s csp_packet_t;

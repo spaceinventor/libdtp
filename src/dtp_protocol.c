@@ -3,10 +3,9 @@
 #include <stdlib.h>
 #include <csp/csp.h>
 #include <dtp/platform.h>
-#include "dtp_log.h"
-#include "dtp_protocol.h"
-#include "dtp_log.h"
-#include "dtp_session.h"
+#include "dtp/dtp_log.h"
+#include "dtp/dtp_protocol.h"
+#include "dtp/dtp_session.h"
 
 #define PKT_SIZE (200U)
 

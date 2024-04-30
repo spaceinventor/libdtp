@@ -5,7 +5,6 @@ lib_src = [
 ]
 client_src = [
     'dtp_client.c',
-    'segments_utils.c',
 ]
 server_src = [
     'dtp_server.c',
