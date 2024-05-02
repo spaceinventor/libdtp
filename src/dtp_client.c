@@ -99,7 +99,6 @@ dtp_result start_receiving_data(dtp_t *session)
     session->start_ts = csp_get_s();
     uint32_t now = session->start_ts;
     socket->opts = CSP_SO_CONN_LESS;
-    char progress_str[32] = { 0 };
 
     if(session->hooks.on_start) {
         session->hooks.on_start(session);
@@ -111,7 +110,6 @@ dtp_result start_receiving_data(dtp_t *session)
         uint32_t expected_nof_packets = compute_nof_packets(session->payload_size - session->bytes_received, payload_s);
         uint32_t nof_csp_packets = 0;
         uint32_t received_so_far = 0;
-        uint8_t nof_ch_to_remove = 0;
         while ((idle_ms <= (session->timeout * 1000)) && nof_csp_packets < expected_nof_packets)
         {
             packet = csp_recvfrom(socket, 1000);
@@ -133,15 +131,6 @@ dtp_result start_receiving_data(dtp_t *session)
             }
             current_seq++;
             csp_buffer_free(packet);
-            if(nof_csp_packets % 100 == 0) {
-                progress_str[0] = '\0';
-                char *tmp = progress_str;
-                for (uint8_t i=0; i < nof_ch_to_remove; i++) {
-                    tmp += sprintf(tmp, "%s", "\b");
-                }
-                nof_ch_to_remove = sprintf(tmp, "%"PRIu32, received_so_far);
-                csp_print(progress_str);
-            }
         }
         if (idle_ms >= (session->timeout * 1000)) {
             dbg_warn("No data received for %u ms, bailing out", idle_ms);
