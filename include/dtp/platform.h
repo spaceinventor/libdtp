@@ -26,7 +26,7 @@ extern "C"
      * @brief Get info about a specific payload
      * 
      * This function is to be specialized for each platform that can deliver a payload through DTP,
-     * if you do not implement it, a test implementation (_weak__) will get linked in.
+     * if you do not implement it, a test implementation (__weak__) will get linked in.
      * 
      * @param meta[out] pointer to a valid object that will be filled in
      * @param payload_id payload identifier
