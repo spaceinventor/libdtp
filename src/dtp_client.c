@@ -9,7 +9,7 @@
 #include "dtp/dtp_session.h"
 #include "dtp/dtp_log.h"
 
-int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, uint8_t payload_id,  bool resume, dtp_t **out_session) {
+int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, uint8_t payload_id, uint16_t mtu, bool resume, dtp_t **out_session) {
     dtp_t *session = NULL;
     dtp_result res = DTP_OK;
 
@@ -57,6 +57,12 @@ int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, u
         goto get_out_please;
     }
     
+    remote_cfg.mtu.value = mtu;
+    res = dtp_set_opt(session, DTP_MTU_CFG, &remote_cfg);
+    if (DTP_OK != res) {
+        goto get_out_please;
+    }
+
     res = dtp_start_transfer(session);
 get_out_please:
     if (DTP_OK == res && 0 != out_session) {
@@ -112,7 +118,7 @@ dtp_result start_receiving_data(dtp_t *session)
     dbg_log("Start receiving data");
     csp_listen(socket, 1);
     if(CSP_ERR_NONE == csp_bind(socket, 8)) {
-        const uint32_t payload_s = DTP_PACKET_SIZE - sizeof(uint32_t);
+        const uint32_t payload_s = session->request_meta.mtu - sizeof(uint32_t);
         uint32_t expected_nof_packets = compute_nof_packets(session->payload_size - session->bytes_received, payload_s);
         uint32_t nof_csp_packets = 0;
         uint32_t received_so_far = 0;
@@ -129,7 +135,7 @@ dtp_result start_receiving_data(dtp_t *session)
             idle_ms = 0;
             session->bytes_received += packet->length - sizeof(uint32_t);
             received_so_far += packet->length - sizeof(uint32_t);
-            packet_seq = packet->data32[0] / (DTP_PACKET_SIZE - sizeof(uint32_t));
+            packet_seq = packet->data32[0] / (session->request_meta.mtu - sizeof(uint32_t));
             if(session->hooks.on_data_packet) {
                 if (false == session->hooks.on_data_packet(session, packet)) {
                    dbg_warn("on_data_packet() hook return false, (TBD: aborting)"); 

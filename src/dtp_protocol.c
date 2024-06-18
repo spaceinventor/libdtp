@@ -7,10 +7,6 @@
 #include "dtp/dtp_protocol.h"
 #include "dtp/dtp_session.h"
 
-#define PKT_SIZE (200U)
-
-const uint16_t DTP_PACKET_SIZE = PKT_SIZE;
-
 dtp_server_transfer_ctx_t server_transfer_ctx;
 
 dtp_result send_remote_meta_req(dtp_t *session)

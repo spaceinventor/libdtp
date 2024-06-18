@@ -56,6 +56,7 @@ extern "C"
         DTP_THROUGHPUT_CFG = 1 << 2,
         DTP_TIMEOUT_CFG = 1 << 3,
         DTP_PAYLOAD_ID_CFG = 1 << 4,
+        DTP_MTU_CFG = 1 << 5,
     } dtp_option;
 
     /**
@@ -76,6 +77,10 @@ extern "C"
     typedef struct {
         uint8_t value; /// Payload ID to retrieve
     } dtp_opt_payload_id_cfg;
+
+    typedef struct {
+        uint16_t value; /// MTU size to use
+    } dtp_opt_mtu_cfg;
 
     /**
      * configuration - DTP session hooks
@@ -128,8 +133,6 @@ extern "C"
     extern dtp_opt_session_hooks_cfg default_session_hooks;
     extern const uint32_t DTP_SESSION_VERSION;
 
-    extern const uint16_t DTP_PACKET_SIZE;
-
     /**
      * All gettable/settable parameter types for a session
      */
@@ -139,6 +142,7 @@ extern "C"
         dtp_opt_throughput_cfg throughput;
         dtp_opt_timeout_cfg timeout;
         dtp_opt_payload_id_cfg payload_id;
+        dtp_opt_mtu_cfg mtu;
     } dtp_params;
 
 /*
@@ -245,7 +249,7 @@ extern "C"
 #pragma region Simplified Public API
  */
     extern int dtp_server_main(bool *keep_running);
-    extern int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, uint8_t payload_id, bool resume, dtp_t **session);
+    extern int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, uint8_t payload_id, uint16_t mtu, bool resume, dtp_t **session);
 
 /*
 #pragma endregion

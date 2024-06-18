@@ -79,7 +79,7 @@ VMEM_DEFINE_FILE(dtp_test_session, "dtp_test_session.json", "dtp_test_session.js
 
 REGISTER_TEST(in_process_transfer) {
 	dtp_t *session;
-	TEST_ASSERT(0 == dtp_client_main(0, 1024 * 63, 2, 0, false, &session));
+	TEST_ASSERT(0 == dtp_client_main(0, 1024 * 63, 2, 0, 200, false, &session));
 	dtp_serialize_session(session, 0);
 	// TEST_ASSERT(0 == dtp_client_main(0, 1024 * 63, 2, true, &session));
 	// dtp_serialize_session(session, &vmem_dtp_test_session);

@@ -7,8 +7,8 @@ void parse_meta_data(FILE *f, dtp_t *session) {
     uint32_t packet_size = 0;
     fread(&buffer, sizeof(DTP_SESSION_VERSION), 1, f);
     fread(&session->remote_cfg.node, sizeof(session->remote_cfg.node), 1, f);
-    fread(&packet_size, sizeof(DTP_PACKET_SIZE), 1, f);
-    fread(&session->request_meta.timeout, sizeof(session->request_meta.timeout), 1, f);
+    fread(&session->request_meta.mtu, sizeof(session->request_meta.mtu), 1, f);
+    fread(&session->timeout, sizeof(session->timeout), 1, f);
     fread(&session->request_meta.throughput, sizeof(session->request_meta.throughput), 1, f);
     fread(&session->request_meta.payload_id, sizeof(session->request_meta.payload_id), 1, f);
     fread(&session->bytes_received, sizeof(session->bytes_received), 1, f);
@@ -50,7 +50,7 @@ int main(int argc, const char *argv[]) {
         parse_meta_data(f, &session);
         printf("Session data from file: %s\n", file_name);
         printf("  remote address: %u\n", session.remote_cfg.node);
-        printf("  timeout: %u\n", session.request_meta.timeout);
+        printf("  timeout: %u\n", session.timeout);
         printf("  throughput: %u KB/s\n", session.request_meta.throughput);
         printf("  payload id: %u\n", session.request_meta.payload_id);
         printf("  bytes_received: %u\n", session.bytes_received);

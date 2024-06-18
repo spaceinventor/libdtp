@@ -51,9 +51,9 @@ static uint32_t compute_transfer_size(dtp_server_transfer_ctx_t *ctx) {
         cur_int = &ctx->request.intervals[i];
         if(cur_int->end == 0xFFFFFFFF) {
             /* This means the whole shebang */
-            size += ctx->payload_meta.size - cur_int->start * (DTP_PACKET_SIZE - sizeof(uint32_t));
+            size += ctx->payload_meta.size - cur_int->start * (ctx->request.mtu - sizeof(uint32_t));
         } else {
-            size += cur_int->end  * (DTP_PACKET_SIZE - sizeof(uint32_t)) - cur_int->start * (DTP_PACKET_SIZE - sizeof(uint32_t));
+            size += cur_int->end  * (ctx->request.mtu - sizeof(uint32_t)) - cur_int->start * (ctx->request.mtu - sizeof(uint32_t));
         }
     }
     return size;
@@ -70,7 +70,7 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
     uint32_t now;
     uint32_t current_throughput = 0;
     uint32_t max_throughput = ctx->request.throughput * 1024; // In bytes/second
-    uint32_t packets_second = (max_throughput / DTP_PACKET_SIZE);
+    uint32_t packets_second = (max_throughput / ctx->request.mtu);
     dbg_log("Throughput in packets/sec: %u", packets_second);
 
     bool throttling = false;
@@ -78,17 +78,17 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
     dbg_log("Number of intervals: %u", ctx->request.nof_intervals);
     for(uint8_t i = 0; i < ctx->request.nof_intervals && *(ctx->keep_running); i++)
     {
-        uint32_t interval_start = ctx->request.intervals[i].start * (DTP_PACKET_SIZE - sizeof(uint32_t));
-        uint32_t interval_stop = ctx->request.intervals[i].end * (DTP_PACKET_SIZE - sizeof(uint32_t));
+        uint32_t interval_start = ctx->request.intervals[i].start * (ctx->request.mtu - sizeof(uint32_t));
+        uint32_t interval_stop = ctx->request.intervals[i].end * (ctx->request.mtu - sizeof(uint32_t));
         uint32_t sent_in_interval = 0;
         bytes_sent = interval_start;
         if(interval_stop > ctx->payload_meta.size) {
             interval_stop = ctx->payload_meta.size;
             uint32_t fixed_end;
-            if (interval_stop % (DTP_PACKET_SIZE - sizeof(uint32_t)) != 0) {
-                fixed_end = interval_stop / (DTP_PACKET_SIZE - sizeof(uint32_t)) + 1;
+            if (interval_stop % (ctx->request.mtu - sizeof(uint32_t)) != 0) {
+                fixed_end = interval_stop / (ctx->request.mtu - sizeof(uint32_t)) + 1;
             } else {
-                fixed_end = interval_stop / (DTP_PACKET_SIZE - sizeof(uint32_t));
+                fixed_end = interval_stop / (ctx->request.mtu - sizeof(uint32_t));
             }
             ctx->request.intervals[i].end = fixed_end;
         }        
@@ -118,10 +118,10 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
                 continue;
             }
             nof_csp_packets++;
-            if((bytes_in_interval - sent_in_interval) > (DTP_PACKET_SIZE - sizeof(uint32_t))) {
-                packet->length = DTP_PACKET_SIZE;
+            if((bytes_in_interval - sent_in_interval) > (ctx->request.mtu - sizeof(uint32_t))) {
+                packet->length = ctx->request.mtu;
             } else {
-                // This is the last packet to send, its size is most likely not == DTP_PACKET_SIZE - sizeof(uint32_t)
+                // This is the last packet to send, its size is most likely not == ctx->request.mtu - sizeof(uint32_t)
                 packet->length = (bytes_in_interval - sent_in_interval) + sizeof(uint32_t);
             }
             memcpy(packet->data, &bytes_sent, sizeof(uint32_t));
