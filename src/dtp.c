@@ -180,7 +180,9 @@ dtp_result dtp_set_opt(dtp_t *session, dtp_option option, dtp_params *param)
     case DTP_TIMEOUT_CFG:
         session->timeout = param->timeout.value;
     break;
-    
+    case DTP_PAYLOAD_ID_CFG:
+        session->request_meta.payload_id = param->payload_id.value;
+    break;
     default:
         break;
     }

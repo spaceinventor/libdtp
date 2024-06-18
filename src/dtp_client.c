@@ -9,7 +9,7 @@
 #include "dtp/dtp_session.h"
 #include "dtp/dtp_log.h"
 
-int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, bool resume, dtp_t **out_session) {
+int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, uint8_t payload_id,  bool resume, dtp_t **out_session) {
     dtp_t *session = NULL;
     dtp_result res = DTP_OK;
 
@@ -50,7 +50,13 @@ int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, b
     if (DTP_OK != res) {
         goto get_out_please;
     }
-
+    
+    remote_cfg.payload_id.value = payload_id;
+    res = dtp_set_opt(session, DTP_PAYLOAD_ID_CFG, &remote_cfg);
+    if (DTP_OK != res) {
+        goto get_out_please;
+    }
+    
     res = dtp_start_transfer(session);
 get_out_please:
     if (DTP_OK == res && 0 != out_session) {
