@@ -51,7 +51,7 @@ int main(int argc, const char *argv[]) {
         printf("Session data from file: %s\n", file_name);
         printf("  remote address: %u\n", session.remote_cfg.node);
         printf("  timeout: %u\n", session.request_meta.timeout);
-        printf("  throughput: %u Kb/s\n", session.request_meta.throughput);
+        printf("  throughput: %u KB/s\n", session.request_meta.throughput);
         printf("  payload id: %u\n", session.request_meta.payload_id);
         printf("  bytes_received: %u\n", session.bytes_received);
         printf("  payload size: %u\n", session.payload_size);

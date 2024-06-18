@@ -65,7 +65,7 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
     csp_packet_t *packet;
     uint32_t bytes_sent = 0;
     uint32_t nof_csp_packets = 0;
-    dbg_log("Start sending data, setting max throughput to %u Kb/sec", ctx->request.throughput);
+    dbg_log("Start sending data, setting max throughput to %u KB/sec", ctx->request.throughput);
     uint32_t first_packet_ts = csp_get_ms();
     uint32_t now;
     uint32_t current_throughput = 0;

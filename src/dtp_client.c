@@ -145,6 +145,6 @@ dtp_result start_receiving_data(dtp_t *session)
     uint32_t duration = now - session->start_ts;
     duration = duration?duration:1;
     dbg_log("Received %lu bytes, last seq: %lu, status: %d", session->bytes_received, packet_seq, result);
-    dbg_log("Session duration: %u sec, avg throughput: %u Kb/sec", duration, (session->bytes_received / duration) / 1024);
+    dbg_log("Session duration: %u sec, avg throughput: %u KB/sec", duration, (session->bytes_received / duration) / 1024);
     return result;
 }

@@ -65,7 +65,7 @@ extern "C"
     } dtp_opt_remote_cfg;
 
     typedef struct {
-        uint16_t value; /// MAX Throughout in Kb/s
+        uint32_t value; /// MAX Throughout in KB/s
     } dtp_opt_throughput_cfg;
 
     typedef struct {

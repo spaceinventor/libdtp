@@ -25,8 +25,8 @@ extern "C"
     /** Transfer request */
     typedef struct
     {
-        uint16_t throughput; /** max server throughput in Kb/second */
-        uint8_t timeout; /** number of seconds with no received packets that will stop the session */
+        uint32_t throughput; /** max server throughput in KB/second */
+        // uint8_t timeout; /** number of seconds with no received packets that will stop the session */
         uint8_t nof_intervals; /** Number of segments to transfer, see the intervals below */
         uint8_t payload_id; /** Payload ID, conceptual identifer for the payload to retrieve, semantic is entirely server-specific */
         interval_t intervals[19]; /** list of start-stop pairs to transfer, number is set by nof_intervals above */
