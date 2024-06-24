@@ -119,6 +119,7 @@ dtp_t *dtp_acquire_session()
             static_sessions[i].in_use = true;
             dtp_t *session = &static_sessions[i].session;
             session->bytes_received = 0;
+            session->user_context = NULL;
             session->request_meta.nof_intervals = 1;
             session->request_meta.intervals[0].start = 0;
             session->request_meta.intervals[0].end = 0xffffffff; /* interval 0-0xFFFFFFFF means the whole thing */
@@ -254,4 +255,12 @@ uint32_t compute_throughput(uint32_t now, uint32_t last_ts, uint32_t bytes_sent)
         return bytes_sent / (now - last_ts);
     }
     return 0;
+}
+
+void dtp_session_set_user_ctx(dtp_t *session, void *user_context) {
+    session->user_context = user_context;
+}
+
+void *dtp_session_get_user_ctx(dtp_t *session) {
+    return session->user_context;
 }

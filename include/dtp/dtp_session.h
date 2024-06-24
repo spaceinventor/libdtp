@@ -25,6 +25,7 @@ extern "C"
     typedef struct dtp_t
     {
         csp_conn_t *conn;
+        void *user_context;
         dtp_opt_remote_cfg remote_cfg;
         dtp_opt_session_hooks_cfg hooks;
         uint32_t bytes_received;

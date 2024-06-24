@@ -189,6 +189,21 @@ extern "C"
     dtp_result dtp_deserialize_session(dtp_t *session, vmem_t *src);
 
     /**
+     * @brief Save a pointer to user data in a DTP session object
+     * @param session pointer to a valid DTP session object
+     * @param user_context pointer to user data
+     * @note this is by default set to NULL
+     */
+    void dtp_session_set_user_ctx(dtp_t *session, void *user_context);
+
+    /**
+     * @brief Retrieve a DTP session user context previously saved using dtp_deserialize_session()
+     * @param session pointer to a valid DTP session object
+     * @return pointer to the user context
+     */
+    void *dtp_session_get_user_ctx(dtp_t *session);
+
+    /**
      * Get the errno value for the given session
      * @param[in] session pointer to a valid dtp session object
      * 
