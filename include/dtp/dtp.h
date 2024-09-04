@@ -35,7 +35,7 @@ extern "C"
         DTP_EINVAL, //!< Invalid argument
         DTP_ENOMORE_SESSIONS, //!< All static sessions in use
         DTP_ESESSION_NOT_FOUND, //!< Given session not found
-        DTP_CONNECTION_FAILED, //!< Connecting to the server failed, for some rease
+        DTP_CONNECTION_FAILED, //!< Connecting to the server failed, for some reason
         DTP_MALLOC_FAILED, //!< Could not allocate a mandatory piece of memory
         DTP_NOT_IMPLEMENTED, //!< Still under construction, sorry
         DTP_LAST_ERR
