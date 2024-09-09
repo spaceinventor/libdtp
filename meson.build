@@ -8,17 +8,6 @@ include = include_directories('include')
 
 subdir('src')
 
-# if not meson.is_subproject()
-#   if not meson.is_cross_build() or target_machine.system() == 'linux'
-#     slash_dep = subproject('slash').get_variable('slash_dep')
-#     subdir('apm')
-#     subdir('utils')
-#     if false
-#       subdir('tests')
-#     endif
-#   endif
-# endif
-
 gen_doc = find_program('gen-sidoc', required: false)
 
 if gen_doc.found()
@@ -59,3 +48,7 @@ endif
 
 dtp_client_dep = declare_dependency(include_directories : include, link_with : dtp_client_lib, dependencies: dtp_lib_dep).as_link_whole()
 dtp_server_dep = declare_dependency(include_directories : include, link_with : dtp_server_lib, dependencies: dtp_lib_dep).as_link_whole()
+
+if not meson.is_subproject()
+    subdir('tests')
+endif
