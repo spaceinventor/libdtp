@@ -264,3 +264,13 @@ void dtp_session_set_user_ctx(dtp_t *session, void *user_context) {
 void *dtp_session_get_user_ctx(dtp_t *session) {
     return session->user_context;
 }
+
+dtp_on_data_info_t dtp_get_data_info(dtp_t *session, csp_packet_t * p) {
+    dtp_on_data_info_t result = {
+        .packet_sequence_number = p->data32[0] / (session->request_meta.mtu - sizeof(uint32_t)),
+        .data_offset = p->data32[0],
+        .data_length = p->length - sizeof(uint32_t),
+        .data = p->data + sizeof(uint32_t),
+    };
+    return result;
+}

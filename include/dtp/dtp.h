@@ -134,6 +134,24 @@ extern "C"
     extern const uint32_t DTP_SESSION_VERSION;
 
     /**
+     * @brief Useful DTP info extracted from a raw CSP packet, see dtp_get_data_info()
+     */
+    typedef struct dtp_on_data_info_s {
+        uint32_t packet_sequence_number;
+        uint32_t data_offset;
+        uint32_t data_length;
+        void *data;
+    } dtp_on_data_info_t;
+    
+    /**
+     * @brief Obtain info about a DTP data packet from a raw data packet received through the on_data_packet() session hook
+     * @param session valid dtp session
+     * @param p CSP data packet
+     * @return filled-in dtp_on_data_info_t structure with info extracted from the CSP packet
+     */
+    dtp_on_data_info_t dtp_get_data_info(dtp_t *session, csp_packet_t * p);
+
+    /**
      * All gettable/settable parameter types for a session
      */
     typedef union {
