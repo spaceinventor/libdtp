@@ -103,7 +103,6 @@ dtp_result start_receiving_data(dtp_t *session)
 {
     dtp_result result = DTP_OK;
     csp_packet_t *packet;
-    uint32_t current_seq = 0;
     uint32_t packet_seq = 0;
     uint32_t idle_ms = 0;
     csp_socket_t sock = { .opts = CSP_SO_CONN_LESS };
@@ -121,7 +120,6 @@ dtp_result start_receiving_data(dtp_t *session)
         const uint32_t payload_s = session->request_meta.mtu - sizeof(uint32_t);
         uint32_t expected_nof_packets = compute_nof_packets(session->payload_size - session->bytes_received, payload_s);
         uint32_t nof_csp_packets = 0;
-        uint32_t received_so_far = 0;
         while ((idle_ms <= (session->timeout * 1000)) && nof_csp_packets < expected_nof_packets)
         {
             packet = csp_recvfrom(socket, 1000);
@@ -134,14 +132,12 @@ dtp_result start_receiving_data(dtp_t *session)
             now = csp_get_s();
             idle_ms = 0;
             session->bytes_received += packet->length - sizeof(uint32_t);
-            received_so_far += packet->length - sizeof(uint32_t);
             packet_seq = packet->data32[0] / (session->request_meta.mtu - sizeof(uint32_t));
             if(session->hooks.on_data_packet) {
                 if (false == session->hooks.on_data_packet(session, packet)) {
                    dbg_warn("on_data_packet() hook return false, (TBD: aborting)"); 
                 }
             }
-            current_seq++;
             csp_buffer_free(packet);
         }
         if (idle_ms >= (session->timeout * 1000)) {
