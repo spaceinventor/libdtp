@@ -159,7 +159,7 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
         dbg_log("Sending %d packets every %d ms\n", transfer.nof_packets_per_round, round_time);
 
         /* Trigger a poll'ing operation for this interval */
-        os_hal_start_poll_operation(round_time, dtp_server_poll_loop, &transfer);
+        os_hal_start_poll_operation(round_time, 0, dtp_server_poll_loop, &transfer);
 
         dbg_log("sent_in_interval: %u", transfer.sent_in_interval);
     }

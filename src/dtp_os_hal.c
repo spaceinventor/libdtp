@@ -34,7 +34,7 @@ void os_hal_start_poll_operation(uint32_t poll_period_ms, uint32_t op, bool (*po
         /* Update the wakeup time */
         wakeupTime = csp_get_ms();
         /* Execute the poll operation */
-        carryon = (*poll)(1, context);
+        carryon = (*poll)(op, context);
     }
 #elif defined (CSP_FREERTOS)
     TickType_t wakeupTime = xTaskGetTickCount();
@@ -48,7 +48,7 @@ void os_hal_start_poll_operation(uint32_t poll_period_ms, uint32_t op, bool (*po
             continue;
         }
         /* Call the poll method passed in as argument */
-        carryon = (*poll)(1, context);
+        carryon = (*poll)(op, context);
     }
 #endif
 
