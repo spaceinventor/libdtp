@@ -31,6 +31,9 @@ void os_hal_start_poll_operation(uint32_t poll_period_ms, bool (*poll)(uint32_t 
         } else {
             /* We have overslept, so go right ahead and do the poll */
         }
+        /* Update the wakeup time */
+        wakeupTime = csp_get_ms();
+        /* Execute the poll operation */
         carryon = (*poll)(1, context);
     }
 #elif defined (CSP_FREERTOS)
