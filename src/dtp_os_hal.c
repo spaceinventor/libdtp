@@ -4,7 +4,8 @@
 #include "csp/autoconfig.h"
 
 #if defined (CSP_POSIX)
-#include "csp/csp.h"
+#include <unistd.h>
+#include "csp/arch/csp_time.h"
 #elif defined (CSP_FREERTOS)
 #include "FreeRTOS.h"
 #include "task.h"
@@ -17,10 +18,19 @@ void os_hal_start_poll_operation(uint32_t poll_period_ms, bool (*poll)(uint32_t 
     bool carryon = true;
 
 #if defined (CSP_POSIX)
-    uint32_t current_time = csp_get_ms();
+    uint32_t wakeupTime = csp_get_ms();
     /* On the POSIX platform, this is just a tight loop */
     while (carryon) {
         /* Calculate the sleep period */
+        uint32_t time_since_last = csp_get_ms() - wakeupTime;
+        uint32_t sleep_period;
+        if (poll_period_ms > time_since_last) {
+            /* Calculate remaining sleep period */
+            sleep_period = (poll_period_ms - time_since_last);
+            usleep(sleep_period * 1000);
+        } else {
+            /* We have overslept, so go right ahead and do the poll */
+        }
         carryon = (*poll)(1, context);
     }
 #elif defined (CSP_FREERTOS)
