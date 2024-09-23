@@ -2,6 +2,7 @@ lib_src = [
     'dtp.c',
     'dtp_log.c',
     'dtp_protocol.c',
+    'dtp_os_hal.c',
 ]
 client_src = [
     'dtp_client.c',
