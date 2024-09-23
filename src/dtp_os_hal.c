@@ -13,7 +13,7 @@
 
 #include "dtp/dtp_os_hal.h"
 
-void os_hal_start_poll_operation(uint32_t poll_period_ms, bool (*poll)(uint32_t op, void *), void *context) {
+void os_hal_start_poll_operation(uint32_t poll_period_ms, uint32_t op, bool (*poll)(uint32_t op, void *), void *context) {
 
     bool carryon = true;
 
