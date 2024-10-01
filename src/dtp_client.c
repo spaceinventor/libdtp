@@ -107,7 +107,7 @@ dtp_result start_receiving_data(dtp_t *session)
     uint32_t idle_ms = 0;
     csp_socket_t sock = { .opts = CSP_SO_CONN_LESS };
     csp_socket_t *socket = &sock;
-    session->start_ts = csp_get_s();
+    session->start_ts = csp_get_ms();
     uint32_t now = session->start_ts;
     socket->opts = CSP_SO_CONN_LESS;
 
@@ -129,7 +129,7 @@ dtp_result start_receiving_data(dtp_t *session)
                 continue;
             }
             nof_csp_packets++;
-            now = csp_get_s();
+            now = csp_get_ms();
             idle_ms = 0;
             session->bytes_received += packet->length - sizeof(uint32_t);
             packet_seq = packet->data32[0] / (session->request_meta.mtu - sizeof(uint32_t));
@@ -153,6 +153,6 @@ dtp_result start_receiving_data(dtp_t *session)
     uint32_t duration = now - session->start_ts;
     duration = duration?duration:1;
     dbg_log("Received %lu bytes, last seq: %lu, status: %d", session->bytes_received, packet_seq, result);
-    dbg_log("Session duration: %u sec, avg throughput: %u KB/sec", duration, (session->bytes_received / duration) / 1024);
+    dbg_log("Session duration: %u.%u s, avg throughput: %u KB/sec", (duration/1000),(duration - ((duration/1000)*1000)), ((session->bytes_received / duration) * 1000 ) / 1024);
     return result;
 }
