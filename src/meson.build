@@ -14,10 +14,8 @@ server_src = [
 
 csp_dep = subproject('csp').get_variable('csp_dep').partial_dependency(links: false, includes: true)
 csp_dep_static = subproject('csp').get_variable('csp_dep')
-param_dep = subproject('param').get_variable('param_dep').partial_dependency(links: false, includes: true)
-param_dep_static = subproject('param').get_variable('param_dep')
 
-lib_deps = [csp_dep, param_dep]
+lib_deps = [csp_dep]
 
 dtp_lib = library('dtp', lib_src, include_directories: [include, include_directories('.')], dependencies: lib_deps)
 dtp_lib_dep = declare_dependency(include_directories : include, link_with : dtp_lib, dependencies: lib_deps)#.as_link_whole()

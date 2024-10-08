@@ -2,10 +2,6 @@
 #include "unity_test_utils.h"
 
 #include "dtp/dtp.h"
-#include "vmem/vmem_ram.h"
-
-static uint8_t vmem_ram[256] = {0};
-VMEM_DEFINE_STATIC_RAM_ADDR(session_serialize_test, "session_serialize_test", sizeof(uint32_t), &vmem_ram[0]);
 
 void setUp(void) {
 }
@@ -21,7 +17,7 @@ REGISTER_TEST(test_create_destroy) {
 REGISTER_TEST(test_serialize_session) {
     dtp_t *session = dtp_acquire_session();
     TEST_ASSERT(0 != session);
-    dtp_result res = dtp_serialize_session(session, &vmem_session_serialize_test);
+    dtp_result res = dtp_serialize_session(session, NULL);
     TEST_ASSERT(res == DTP_OK);
 }
 

@@ -13,8 +13,6 @@ extern "C"
 
     /* CSP connection  type forward declaration*/
     typedef struct csp_packet_s csp_packet_t;
-     /** VMEM type forward declaration */
-    typedef struct vmem_s vmem_t;
     /** Opaque handle to a DTP sesssion */
     typedef struct dtp_t dtp_t;
 
@@ -114,16 +112,16 @@ extern "C"
         /** 
          * Called when session is serialized, allows complete customization of serialization.
          * @param session the current session
-         * @param output destination for serialization (might be a vmem * IF that's enough?)
+         * @param context pointer to a user defined object given to dtp_serialize_session()
          */        
-        void (*on_serialize)(dtp_t *session, vmem_t *output);
+        void (*on_serialize)(dtp_t *session, void *context);
 
         /** 
          * Called when session is deserialized, allows complete customization of de-serialization.
          * @param session the current session
-         * @param input source for deserialization (might be a vmem * IF that's enough?)
+         * @param context pointer to a user defined object given to dtp_deserialize_session()
          */        
-        void (*on_deserialize)(dtp_t *session, vmem_t *input);
+        void (*on_deserialize)(dtp_t *session, void *context);
 
         void *hook_ctx;
     } dtp_opt_session_hooks_cfg;
@@ -188,23 +186,23 @@ extern "C"
      * A serialized DTP session can be read back as a valid session using the counterpart dtp_deserialize_session() function.
      * 
      * @param[in] session pointer to a valid session object
-     * @param[in] dst pointer to a vmem_t object the session will be serialized to
+     * @param[in] ctx pointer to a user defined object that can be used by the on_serialize() session hook
      * 
      * @return DTP_OK in serialization completed, else DTP_ERR, see csftp_errno()
      *
      */
-    dtp_result dtp_serialize_session(dtp_t *session, vmem_t *dst);
+    dtp_result dtp_serialize_session(dtp_t *session, void *ctx);
 
     /**
      * Deserialize a DTP session using the given source VMEM
      * 
      * @param[in] session pointer to a valid session object
-     * @param[in] src pointer to a vmem_t object the session will be deserialized from
+     * @param[in] src pointer to a user defined object that can be used by the on_deserialize() session hook
      * 
      * @return DTP_OK in serialization completed, else DTP_ERR, see csftp_errno(). If sucessful, the object will contained data as it was when the session was serialized.
      *
      */
-    dtp_result dtp_deserialize_session(dtp_t *session, vmem_t *src);
+    dtp_result dtp_deserialize_session(dtp_t *session, void *ctx);
 
     /**
      * @brief Save a pointer to user data in a DTP session object

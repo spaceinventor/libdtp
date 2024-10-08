@@ -48,8 +48,8 @@ static dtp_static_session_t static_sessions[DTP_NOF_STATIC_SESSIONS] = {0};
 static void default_on_session_start(dtp_t *session);
 static bool default_on_data_packet(dtp_t *session, csp_packet_t *p);
 static void default_on_session_end(dtp_t *session);
-static void default_on_serialize(dtp_t *session, vmem_t *output);
-static void default_on_deserialize(dtp_t *session, vmem_t *input);
+static void default_on_serialize(dtp_t *session, void *ctx);
+static void default_on_deserialize(dtp_t *session, void *ctx);
 static void default_on_session_release(dtp_t *session);
 
 dtp_opt_session_hooks_cfg default_session_hooks __attribute__((weak)) = {
@@ -80,16 +80,16 @@ static void default_on_session_end(dtp_t *session) {
     (void)session;
 }
 
-static void default_on_serialize(dtp_t *session, vmem_t *output) {
+static void default_on_serialize(dtp_t *session, void *ctx) {
     dbg_log("Default on_serialize hook");
     (void)session;
-    (void)output;
+    (void)ctx;
 }
 
-static void default_on_deserialize(dtp_t *session, vmem_t *input) {
+static void default_on_deserialize(dtp_t *session, void *ctx) {
     dbg_log("Default on_deserialize hook");
     (void)session;
-    (void)input;
+    (void)ctx;
 }
 static void default_on_session_release(dtp_t *session) {
     dbg_log("Default on_release hook");
@@ -223,18 +223,18 @@ dtp_result dtp_stop_transfer(dtp_t *session)
     return DTP_OK;
 }
 
-dtp_result dtp_serialize_session(dtp_t *session, vmem_t *dest)
+dtp_result dtp_serialize_session(dtp_t *session, void *ctx)
 {
     if(session->hooks.on_serialize) {
-        session->hooks.on_serialize(session, dest);
+        session->hooks.on_serialize(session, ctx);
     }
     return DTP_OK;
 }
 
-dtp_result dtp_deserialize_session(dtp_t *session, vmem_t *src)
+dtp_result dtp_deserialize_session(dtp_t *session, void *ctx)
 {
     if(session->hooks.on_deserialize) {
-        session->hooks.on_deserialize(session, src);
+        session->hooks.on_deserialize(session, ctx);
     }
     return DTP_OK;
 }
