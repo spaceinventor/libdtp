@@ -145,8 +145,12 @@ dtp_result dtp_release_session(dtp_t *session)
                 session->hooks.on_release(session);
             }
             csp_close(static_sessions[i].session.conn);
+            dtp_t *session = &static_sessions[i].session;
             /* Save session last error in case somebody asks after releasing */
-            last_error = static_sessions[i].session.errno;
+            last_error = session->errno;
+            session->user_context = NULL;
+            session->bytes_received = 0;
+            session->request_meta.nof_intervals = 0;
             static_sessions[i].in_use = false;
             static_sessions[i].session.errno = DTP_NO_ERR;
             return DTP_OK;
