@@ -28,7 +28,7 @@ int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, u
         if (DTP_OK != res) {
             goto get_out_please;
         }
-        if (session->request_meta.nof_intervals == 0) {
+        if (session->bytes_received == session->payload_size || session->request_meta.nof_intervals == 0) {
             dbg_log("No more data to fetch.");
             goto get_out_please;
         }
