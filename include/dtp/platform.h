@@ -20,7 +20,13 @@ extern "C"
     {
         uint32_t size;
         uint32_t (*read)(uint8_t payload_id, uint32_t offset, void *output, uint32_t size);
-    } dftp_payload_meta_t;
+    } dtp_payload_meta_t;
+
+    /**
+     * @brief compatibility typedef, you should update your code to use "dtp_payload_meta_t" instead!
+     * @deprecated compatibility typedef, you should update your code to use "dtp_payload_meta_t" instead!
+     */
+    typedef dtp_payload_meta_t dftp_payload_meta_t;
 
     /**
      * @brief Get info about a specific payload
@@ -32,7 +38,7 @@ extern "C"
      * @param payload_id payload identifier
      * @return true if payload is valid and meta data filled in, false otherwise
      */
-    extern bool get_payload_meta(dftp_payload_meta_t *meta, uint8_t payload_id);
+    extern bool get_payload_meta(dtp_payload_meta_t *meta, uint8_t payload_id);
 
 #ifdef __cplusplus
 }

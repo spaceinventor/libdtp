@@ -38,7 +38,7 @@ extern "C"
         uint32_t size_in_bytes; /** total number of bytes to transfer */
         bool *keep_running; /** Flag indicating if the transfer should continue or not */
         dtp_meta_req_t request; /** List of intervals to transfer */
-        dftp_payload_meta_t payload_meta; /** Payload info, see dftp_payload_meta_t */
+        dtp_payload_meta_t payload_meta; /** Payload info, see dtp_payload_meta_t */
     } dtp_server_transfer_ctx_t;
 
     /**
