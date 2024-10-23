@@ -1,0 +1,4 @@
+#!/bin/sh
+rm -rf builddir
+echo meson setup . builddir -Dprefix=$HOME/.local $*
+meson setup . builddir -Dprefix=$HOME/.local $*

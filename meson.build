@@ -5,6 +5,7 @@ project('dtp', 'c', subproject_dir: 'extern', version: '0.0.1', default_options:
 ])
 
 include = include_directories('include')
+install_subdir('include', install_dir : '.')
 
 subdir('src')
 
@@ -51,4 +52,11 @@ dtp_server_dep = declare_dependency(include_directories : include, link_with : d
 
 if not meson.is_subproject()
     subdir('tests')
+    pkg = import('pkgconfig')
+    pkg.generate(
+      name: meson.project_name(),
+      version: meson.project_version(),
+      libraries: [dtp_client_lib, dtp_server_lib],
+      description: 'Data Transfer Protocol over CSP'
+    )
 endif
