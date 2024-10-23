@@ -4,9 +4,3 @@
 [submodule "extern/csp"]
 	path = extern/csp
 	url = https://github.com/spaceinventor/libcsp.git
-[submodule "extern/slash"]
-	path = extern/slash
-	url = https://github.com/spaceinventor/slash
-[submodule "extern/apm_csh"]
-	path = extern/apm_csh
-	url = https://github.com/spaceinventor/libapm_csh.git
