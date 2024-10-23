@@ -1,12 +1,18 @@
 #include "unity.h"
 #include "unity_test_utils.h"
 
+#include "dtp_internal_api.h"
 #include "dtp/dtp.h"
 
 void setUp(void) {
 }
 
 void tearDown(void) {
+}
+
+REGISTER_TEST(test_compute_throughput) {
+    uint32_t throughput = compute_throughput(1000, 0, 1000);
+    TEST_ASSERT(1 == throughput);
 }
 
 REGISTER_TEST(test_create_destroy) {
