@@ -79,6 +79,8 @@ static bool dtp_server_poll_loop(uint32_t op, void *context) {
     uint32_t pkt_cnt = 0;
     while (transfer->nof_packets_per_round > pkt_cnt) {
 
+        uint32_t data_read;
+
         packet = csp_buffer_get(0);
         if(NULL == packet) {
             dbg_warn("could not get packet to send");
@@ -99,11 +101,15 @@ static bool dtp_server_poll_loop(uint32_t op, void *context) {
         memcpy(packet->data, &transfer->bytes_sent, sizeof(uint32_t));
 
         // Get the packet payload data from the "user"
-        transfer->ctx->payload_meta.read(transfer->ctx->request.payload_id, transfer->bytes_sent, packet->data + sizeof(uint32_t), packet->length - sizeof(uint32_t));
+        data_read =transfer->ctx->payload_meta.read(transfer->ctx->request.payload_id, transfer->bytes_sent, packet->data + sizeof(uint32_t), packet->length - sizeof(uint32_t));
+        if (data_read == 0){
+            dbg_warn("could not read data from user");
+            break;
+        }
 
         // Update the transmit metrics
-        transfer->bytes_sent += packet->length - sizeof(uint32_t);
-        transfer->sent_in_interval += packet->length - sizeof(uint32_t);
+        transfer->bytes_sent += data_read;//packet->length - sizeof(uint32_t);
+        transfer->sent_in_interval += data_read;//packet->length - sizeof(uint32_t);
 
         // TODO: The priority parameter might need to be adjusted according to payload meta-data, though it may not have any impact
         // on actual speed transfer at all.
@@ -168,6 +174,12 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
     }
     dbg_warn("nof_csp_packets= %lu", transfer.nof_csp_packets);
     dbg_warn("Server transfer completed, sent %lu packets", transfer.nof_csp_packets);
+
+    /* Signal completion to the user, if possible */
+    if (transfer.ctx->payload_meta.completed) {
+        (*transfer.ctx->payload_meta.completed)(transfer.ctx->request.payload_id, transfer.bytes_sent);
+    }
+
     return result;
 }
 

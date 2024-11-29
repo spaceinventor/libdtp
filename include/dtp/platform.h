@@ -20,6 +20,7 @@ extern "C"
     {
         uint32_t size;
         uint32_t (*read)(uint8_t payload_id, uint32_t offset, void *output, uint32_t size);
+        void (*completed)(uint8_t payload_id, uint32_t size);
     } dtp_payload_meta_t;
 
     /**
