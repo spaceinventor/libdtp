@@ -10,21 +10,21 @@ static const char *green = GREEN;
 static const char *reset = RESET;
 
 extern void dbg_log_impl(const char *file, unsigned int line, const char *__restrict __format, ...) {
-    fprintf(stdout, "%s[LOG] %s:%u: ", green, file, line);
+    printf("%s[LOG] %s:%u: ", green, file, line);
     va_list start;
     va_start(start, __format);
-    vfprintf(stdout, __format, start);
+    vprintf(__format, start);
     va_end(start);
-    fprintf(stdout, "%s\n", reset); fflush(stdout);
+    printf("%s\n", reset);
 }
 
 extern void dbg_warn_impl(const char *file, unsigned int line, const char *__restrict __format, ...) {
-    fprintf(stdout, "%s[WARN] %s:%u: ", yellow, file, line);
+    printf("%s[WARN] %s:%u: ", yellow, file, line);
     va_list start;
     va_start(start, __format);
-    vfprintf(stdout, __format, start);
+    vprintf(__format, start);
     va_end(start);
-    fprintf(stdout, "%s\n", reset); fflush(stdout);
+    printf("%s\n", reset);
 }
 
 extern void dbg_enable_colors(bool enable) {
