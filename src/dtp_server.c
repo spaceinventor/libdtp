@@ -49,13 +49,14 @@ static void dtp_server_run(bool *keep_running)
 static uint32_t compute_transfer_size(dtp_server_transfer_ctx_t *ctx) {
     uint32_t size = 0;
     interval_t *cur_int;
+    uint32_t chunk_size = ctx->request.mtu - sizeof(uint32_t);
     for (uint8_t i=0; i < ctx->request.nof_intervals; i++) {
         cur_int = &ctx->request.intervals[i];
-        if(cur_int->end == 0xFFFFFFFF) {
+        if(cur_int->end == UINT32_MAX) {
             /* This means the whole shebang */
-            size += ctx->payload_meta.size - cur_int->start * (ctx->request.mtu - sizeof(uint32_t));
+            size += ctx->payload_meta.size - (cur_int->start * chunk_size);
         } else {
-            size += cur_int->end  * (ctx->request.mtu - sizeof(uint32_t)) - cur_int->start * (ctx->request.mtu - sizeof(uint32_t));
+            size += (cur_int->end * chunk_size) - (cur_int->start * chunk_size);
         }
     }
     return size;
@@ -96,7 +97,6 @@ static void dtp_vmem_server_run(bool *keep_running, dtp_async_api_t *api)
             {
                 dbg_log("Got meta data request thru DTP start VMEM transfer");
 
-                server_transfer_ctx.payload_meta.size = msg.size;
                 server_transfer_ctx.size_in_bytes = compute_transfer_size(&server_transfer_ctx);
 
                 dtp_payload_vmem_transfer_t transfer_obj = { .msg = &msg, .api = api };

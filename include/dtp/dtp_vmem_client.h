@@ -9,5 +9,7 @@
 
 typedef struct {
     vmem_request_hdr_t hdr;
-    dtp_meta_req_v2_t meta;
+    uint64_t vaddr;
+    uint32_t size;
+    dtp_meta_req_t meta;
 } __attribute__((packed)) dtp_vmem_request_t;

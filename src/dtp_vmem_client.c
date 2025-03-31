@@ -23,7 +23,7 @@ int vmem_dtp_download(int node, int timeout, uint64_t address, uint32_t length, 
         return -1;
     }
 
-    uint16_t packet_len = sizeof(dtp_vmem_request_t) + (sizeof(interval_v2_t) * intervals);
+    uint16_t packet_len = sizeof(dtp_vmem_request_t);
     csp_packet_t * packet = csp_buffer_get(packet_len);
     if (packet == NULL) {
         return -1;
@@ -32,14 +32,16 @@ int vmem_dtp_download(int node, int timeout, uint64_t address, uint32_t length, 
     dtp_vmem_request_t * request = (void *) packet->data;
     /* VMEM request header */
     request->hdr.type = VMEM_SERVER_START_DTP_TRANSFER;
-    request->hdr.version = VMEM_VERSION;
+    request->hdr.version = version;
     
     /* DTP specifics */
     request->meta.throughput = 1024; /* 1 MB/s */
     request->meta.mtu = VMEM_SERVER_MTU; /* MTU size (size of the *useful* payload DTP will use to split the payload) in BYTES */
+    request->vaddr = htobe64(address);
+    request->size = htobe32(length);
     request->meta.nof_intervals = intervals; /* Only one interval, since this is the initial one */
-    request->meta.intervals[0].start = htobe64(address);
-    request->meta.intervals[0].length = htobe32(length);
+    request->meta.intervals[0].start = htobe32(0);
+    request->meta.intervals[0].end = htobe32(UINT32_MAX);
 
     /* Set the CSP packet length */
     packet->length = packet_len;
@@ -50,11 +52,6 @@ int vmem_dtp_download(int node, int timeout, uint64_t address, uint32_t length, 
     /* Now we expect the VMEM server at the other end to start DTP transmission */
     uint32_t count = 0;
     int dotcount = 0;
-
-    while(1) { 
-
-    }
-
 
     csp_close(conn);
 

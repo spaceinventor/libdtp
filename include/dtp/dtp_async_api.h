@@ -10,7 +10,7 @@ typedef struct dtp_msg_s {
     uint16_t node;
     uint64_t vaddr;
     uint32_t size;
-    dtp_meta_req_v2_t meta;
+    dtp_meta_req_t meta;
 } dtp_msg_t;
 
 typedef struct dtp_async_api_s dtp_async_api_t;

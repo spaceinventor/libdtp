@@ -34,6 +34,7 @@ __attribute__((weak)) bool get_payload_meta(dtp_payload_meta_t *meta, uint8_t pa
         /* deliberate fallthrough for now */
         default:
             /* 128 Mb for testing */
+            meta->base = 0;
             meta->size = 20 * 1024 * 1024;
             meta->read = payload_read;
         break;
