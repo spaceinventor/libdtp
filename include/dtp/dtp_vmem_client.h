@@ -13,3 +13,5 @@ typedef struct {
     uint32_t size;
     dtp_meta_req_t meta;
 } __attribute__((packed)) dtp_vmem_request_t;
+
+extern int vmem_dtp_download(int node, int timeout, uint64_t address, uint32_t length, char * dataout, int version, int use_rdp);
