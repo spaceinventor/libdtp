@@ -22,6 +22,11 @@ extern "C"
         uint32_t end;
     } interval_t;
 
+    typedef struct {
+        uint64_t start;
+        uint32_t length;
+    } interval_v2_t;
+
     /** Transfer request */
     typedef struct
     {
@@ -32,6 +37,14 @@ extern "C"
         uint16_t mtu; /** MTU size (size of the *useful* payload DTP will use to split the payload) in BYTES */
         interval_t intervals[19]; /** list of start-stop pairs to transfer, number is set by nof_intervals above */
     } dtp_meta_req_t;
+
+    typedef struct
+    {
+        uint32_t throughput; /** max server throughput in KB/second */
+        uint8_t nof_intervals; /** Number of segments to transfer, see the intervals below */
+        uint16_t mtu; /** MTU size (size of the *useful* payload DTP will use to split the payload) in BYTES */
+        interval_v2_t intervals[0]; /** list of start-stop pairs to transfer, number is set by nof_intervals above */
+    } dtp_meta_req_v2_t;
 
     typedef struct {
         uint16_t destination; /** Destination port */

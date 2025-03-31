@@ -6,6 +6,7 @@ lib_src = [
 ]
 client_src = [
     'dtp_client.c',
+    'dtp_vmem_client.c',
 ]
 server_src = [
     'dtp_server.c',
@@ -15,7 +16,9 @@ server_src = [
 csp_dep = subproject('csp').get_variable('csp_dep').partial_dependency(links: false, includes: true)
 csp_dep_static = subproject('csp').get_variable('csp_dep')
 
-lib_deps = [csp_dep]
+param_dep = dependency('param', fallback:['param', 'param_dep']).partial_dependency(links: false, includes: true)
+
+lib_deps = [csp_dep, param_dep]
 
 dtp_lib = library('dtp', lib_src, include_directories: [include, include_directories('.')], dependencies: lib_deps, install: true)
 dtp_lib_dep = declare_dependency(include_directories : include, link_with : dtp_lib, dependencies: lib_deps)
