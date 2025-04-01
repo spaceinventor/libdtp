@@ -84,7 +84,7 @@ static void dtp_vmem_server_run(bool *keep_running, dtp_async_api_t *api)
     dbg_log("Starting DTP VMEM Server task.\n");
 
     /* Wait for connections and then process packets on the connection */
-    while (*keep_running)
+    while (true)
     {
         dtp_msg_t msg;
 
@@ -96,7 +96,13 @@ static void dtp_vmem_server_run(bool *keep_running, dtp_async_api_t *api)
             case 0x01: /* DTP_START_VMEM_TRANSFER */
             {
                 dbg_log("Got meta data request thru DTP start VMEM transfer");
+                
+                server_transfer_ctx.request = msg.meta;
+                server_transfer_ctx.payload_meta.size = msg.size;
+                server_transfer_ctx.payload_meta.base = msg.vaddr;
 
+                printf("address: 0x%016"PRIX64"\n", msg.vaddr);
+                printf("size: %"PRIu32"\n", msg.size);
                 server_transfer_ctx.size_in_bytes = compute_transfer_size(&server_transfer_ctx);
 
                 dtp_payload_vmem_transfer_t transfer_obj = { .msg = &msg, .api = api };
@@ -109,7 +115,8 @@ static void dtp_vmem_server_run(bool *keep_running, dtp_async_api_t *api)
                 It can be stopped by setting the 'keep_running' flag on the object
                 passed on to the process. */
                 start_sending_data(&server_transfer_ctx);
-
+                /* Set the keep running flag if it was reset */
+                *keep_running = true;
                 dbg_log("Transfer done");
             }
             break;

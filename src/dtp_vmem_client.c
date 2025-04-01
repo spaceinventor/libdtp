@@ -15,7 +15,7 @@
 #define SAVE_CURPOS CSI "s"
 #define RESTORE_CURPOS CSI "u"
 #define ERASE_LINE CSI "K"
-#define SET_CURPOS CSI "%"PRIu32";%"PRIu32"H"
+#define SET_CURPOS CSI "%u;%uH"
 #define SCROLL_UP CSI "S"
 #define SCROLL_DOWN CSI "T"
 
@@ -57,13 +57,13 @@ int vmem_dtp_download(int node, int timeout, uint64_t address, uint32_t length, 
     /* DTP request */
     vmem_request->type = DTP_REQUEST_START_TRANSFER;
     dtp_start_req_t *request = (dtp_start_req_t *)&vmem_request->body[0];
-    request->session_id = 0; /* TODO: use the session ID */
+    request->session_id = htobe32(0); /* TODO: use the session ID */
     request->vaddr = htobe64(address);
     request->size = htobe32(length);
     
     /* DTP specifics */
-    request->meta.throughput = thrughput;
-    request->meta.mtu = VMEM_SERVER_MTU; /* MTU size (size of the *useful* payload DTP will use to split the payload) in BYTES */
+    request->meta.throughput = htobe32(thrughput);
+    request->meta.mtu = htobe16(VMEM_SERVER_MTU); /* MTU size (size of the *useful* payload DTP will use to split the payload) in BYTES */
     request->meta.nof_intervals = intervals; /* Only one interval, since this is the initial one */
     request->meta.intervals[0].start = htobe32(0);
     request->meta.intervals[0].end = htobe32(UINT32_MAX);
@@ -150,7 +150,7 @@ int vmem_dtp_stop_download(int node, int timeout, int version, int use_rdp) {
     /* DTP request */
     vmem_request->type = DTP_REQUEST_STOP_TRANSFER;
     dtp_stop_req_t *request = (dtp_stop_req_t *)&vmem_request->body[0];
-    request->session_id = 0; /* TODO: use the session ID */
+    request->session_id = htobe32(0);; /* TODO: use the session ID */
 
     /* Set the CSP packet length */
     packet->length = packet_len;
@@ -159,4 +159,6 @@ int vmem_dtp_stop_download(int node, int timeout, int version, int use_rdp) {
     csp_send(conn, packet);
 
     csp_close(conn);
+
+    return 0;
 }
