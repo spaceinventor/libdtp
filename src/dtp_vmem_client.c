@@ -6,6 +6,7 @@
 #include "csp/csp.h"
 #include "vmem/vmem_server.h"
 #include "dtp/dtp_vmem_client.h"
+#include "dtp/dtp_vmem_server.h"
 #include "dtp/dtp_session.h"
 
 #define STRINGIFY_IMPL(arg) #arg
