@@ -16,7 +16,7 @@ server_src = [
 
 csp_dep = dependency('csp', fallback:['csp', 'csp_dep']).partial_dependency(links: false, includes: true)
 param_dep = dependency('param', fallback:['param', 'param_dep']).partial_dependency(links: false, includes: true)
-ossi_dep = dependency('ossi', fallback:['ossi', 'ossi_dep']) #.partial_dependency(links: false, includes: true)
+ossi_dep = dependency('ossi', fallback:['ossi', 'ossi_dep']).partial_dependency(links: false, includes: true)
 
 lib_deps = [csp_dep, param_dep, ossi_dep]
 
