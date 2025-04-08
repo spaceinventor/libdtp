@@ -7,20 +7,18 @@ lib_src = [
 client_src = [
     'dtp_client.c',
     'dtp_vmem_client.c',
-    'dtp_vmem_server.c',
 ]
 server_src = [
     'dtp_server.c',
+    'dtp_vmem_server.c',
     'payload_api.c'
 ]
 
-csp_dep = subproject('csp').get_variable('csp_dep').partial_dependency(links: false, includes: true)
-csp_dep_static = subproject('csp').get_variable('csp_dep')
-
+csp_dep = dependency('csp', fallback:['csp', 'csp_dep']).partial_dependency(links: false, includes: true)
 param_dep = dependency('param', fallback:['param', 'param_dep']).partial_dependency(links: false, includes: true)
-libsi_dep = dependency('si', fallback:['si', 'si_dep']).partial_dependency(links: false, includes: true)
+ossi_dep = dependency('ossi', fallback:['ossi', 'ossi_dep']) #.partial_dependency(links: false, includes: true)
 
-lib_deps = [csp_dep, param_dep, libsi_dep]
+lib_deps = [csp_dep, param_dep, ossi_dep]
 
 dtp_lib = library('dtp', lib_src, include_directories: [include, include_directories('.')], dependencies: lib_deps, install: true)
 dtp_lib_dep = declare_dependency(include_directories : include, link_with : dtp_lib, dependencies: lib_deps)

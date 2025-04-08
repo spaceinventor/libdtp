@@ -7,7 +7,7 @@
 #include "dtp/dtp_async_api.h"
 #include "dtp/dtp_vmem_server.h"
 
-#include "utils/message_queue.h"
+#include "message_queue.h"
 
 #include "vmem/vmem.h"
 #include "vmem/vmem_server.h"
