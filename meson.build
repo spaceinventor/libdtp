@@ -47,8 +47,8 @@ if doxygen.found()
                               build_by_default: false)
 endif
 
-dtp_client_dep = declare_dependency(include_directories : include, link_with : dtp_client_lib, dependencies: dtp_lib_dep).as_link_whole()
-dtp_server_dep = declare_dependency(include_directories : include, link_with : dtp_server_lib, dependencies: dtp_lib_dep).as_link_whole()
+dtp_client_dep = declare_dependency(include_directories : include, link_with : dtp_client_lib, dependencies: dtp_lib_dep)
+dtp_server_dep = declare_dependency(include_directories : include, link_with : dtp_server_lib, dependencies: dtp_lib_dep)
 
 if not meson.is_subproject()
     subdir('tests')

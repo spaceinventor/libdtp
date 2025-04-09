@@ -18,9 +18,11 @@ extern "C"
      */
     typedef struct
     {
+        uint64_t base;
         uint32_t size;
-        uint32_t (*read)(uint8_t payload_id, uint32_t offset, void *output, uint32_t size);
-        void (*completed)(uint8_t payload_id, uint32_t size);
+        uint32_t (*read)(uint8_t payload_id, uint32_t offset, void *output, uint32_t size, void *context);
+        void (*completed)(uint8_t payload_id, uint32_t size, void *context);
+        void *context;
     } dtp_payload_meta_t;
 
     /**

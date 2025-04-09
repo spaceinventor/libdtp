@@ -5,6 +5,7 @@
 #include "dtp/dtp_protocol.h"
 #include "dtp/dtp_log.h"
 #include "dtp/dtp_os_hal.h"
+#include "dtp/dtp_async_api.h"
 
 static void dtp_server_run(bool *keep_running)
 {
@@ -48,16 +49,80 @@ static void dtp_server_run(bool *keep_running)
 static uint32_t compute_transfer_size(dtp_server_transfer_ctx_t *ctx) {
     uint32_t size = 0;
     interval_t *cur_int;
+    uint32_t chunk_size = ctx->request.mtu - sizeof(uint32_t);
     for (uint8_t i=0; i < ctx->request.nof_intervals; i++) {
         cur_int = &ctx->request.intervals[i];
-        if(cur_int->end == 0xFFFFFFFF) {
+        if(cur_int->end == UINT32_MAX) {
             /* This means the whole shebang */
-            size += ctx->payload_meta.size - cur_int->start * (ctx->request.mtu - sizeof(uint32_t));
+            size += ctx->payload_meta.size - (cur_int->start * chunk_size);
         } else {
-            size += cur_int->end  * (ctx->request.mtu - sizeof(uint32_t)) - cur_int->start * (ctx->request.mtu - sizeof(uint32_t));
+            size += (cur_int->end * chunk_size) - (cur_int->start * chunk_size);
         }
     }
     return size;
+}
+
+typedef struct dtp_payload_vmem_transfer_s {
+    dtp_msg_t *msg;
+    dtp_async_api_t *api;
+} dtp_payload_vmem_transfer_t;
+
+static uint32_t dtp_payload_vmem_read(uint8_t payload_id, uint32_t offset, void *output, uint32_t size, void *context) {
+
+    dtp_payload_vmem_transfer_t *txfr = (dtp_payload_vmem_transfer_t *)context;
+
+    (*txfr->api->read)(txfr->api, output, txfr->msg->vaddr + offset, size);
+
+    return size;
+} 
+
+static void dtp_vmem_server_run(bool *keep_running, dtp_async_api_t *api)
+{
+
+    dtp_server_transfer_ctx_t server_transfer_ctx;
+
+    dbg_log("Starting DTP VMEM Server task.\n");
+
+    /* Wait for connections and then process packets on the connection */
+    while (true)
+    {
+        dtp_msg_t msg;
+
+        /* Wait for in coming messages on the queue */
+        dbg_log("Waiting for instruction on receive queue...");
+        (*api->recv)(api, &msg);
+
+        switch (msg.msg) {
+            case 0x01: /* DTP_START_VMEM_TRANSFER */
+            {
+                dbg_log("Got meta data request thru DTP start VMEM transfer");
+                
+                server_transfer_ctx.request = msg.meta;
+                server_transfer_ctx.payload_meta.size = msg.size;
+                server_transfer_ctx.payload_meta.base = msg.vaddr;
+
+                printf("address: 0x%016"PRIX64"\n", msg.vaddr);
+                printf("size: %"PRIu32"\n", msg.size);
+                server_transfer_ctx.size_in_bytes = compute_transfer_size(&server_transfer_ctx);
+
+                dtp_payload_vmem_transfer_t transfer_obj = { .msg = &msg, .api = api };
+                server_transfer_ctx.payload_meta.context = &transfer_obj;
+                server_transfer_ctx.payload_meta.read = dtp_payload_vmem_read;
+                server_transfer_ctx.payload_meta.completed = NULL;
+                server_transfer_ctx.destination = msg.node;
+                server_transfer_ctx.keep_running = keep_running;
+                /* Start the actual transmission of data. This will block until done.
+                It can be stopped by setting the 'keep_running' flag on the object
+                passed on to the process. */
+                start_sending_data(&server_transfer_ctx);
+                /* Set the keep running flag if it was reset */
+                *keep_running = true;
+                dbg_log("Transfer done");
+            }
+            break;
+        }
+    }
+    dbg_log("Bye");
 }
 
 typedef struct dtp_server_transfer_s {
@@ -101,7 +166,7 @@ static bool dtp_server_poll_loop(uint32_t op, void *context) {
         memcpy(packet->data, &transfer->bytes_sent, sizeof(uint32_t));
 
         // Get the packet payload data from the "user"
-        data_read =transfer->ctx->payload_meta.read(transfer->ctx->request.payload_id, transfer->bytes_sent, packet->data + sizeof(uint32_t), packet->length - sizeof(uint32_t));
+        data_read = transfer->ctx->payload_meta.read(transfer->ctx->request.payload_id, transfer->bytes_sent, packet->data + sizeof(uint32_t), packet->length - sizeof(uint32_t), transfer->ctx->payload_meta.context);
         if (data_read == 0){
             dbg_warn("could not read data from user");
             break;
@@ -113,7 +178,7 @@ static bool dtp_server_poll_loop(uint32_t op, void *context) {
 
         // TODO: The priority parameter might need to be adjusted according to payload meta-data, though it may not have any impact
         // on actual speed transfer at all.
-        csp_sendto(CSP_PRIO_NORM, transfer->ctx->destination, 8, 0, 0, packet);
+        csp_sendto(CSP_PRIO_NORM, transfer->ctx->destination, 8 /* DTP DATA PORT */, 0, 0, packet);
         transfer->nof_csp_packets++;
         pkt_cnt++;
     }
@@ -177,7 +242,7 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
 
     /* Signal completion to the user, if possible */
     if (transfer.ctx->payload_meta.completed) {
-        (*transfer.ctx->payload_meta.completed)(transfer.ctx->request.payload_id, transfer.bytes_sent);
+        (*transfer.ctx->payload_meta.completed)(transfer.ctx->request.payload_id, transfer.bytes_sent, transfer.ctx->payload_meta.context);
     }
 
     return result;
@@ -211,5 +276,11 @@ csp_packet_t *setup_server_transfer(dtp_server_transfer_ctx_t *ctx, uint16_t dst
 int dtp_server_main(bool *keep_running)
 {
     dtp_server_run(keep_running);
+    return 0;
+}
+
+int dtp_vmem_server_main(bool *keep_running, dtp_async_api_t *api)
+{
+    dtp_vmem_server_run(keep_running, api);
     return 0;
 }

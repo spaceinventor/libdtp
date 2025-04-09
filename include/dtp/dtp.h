@@ -16,6 +16,8 @@ extern "C"
     /** Opaque handle to a DTP sesssion */
     typedef struct dtp_t dtp_t;
 
+    typedef struct dtp_async_api_s dtp_async_api_t;
+
     /** Returned by most of DTP API calls*/
     typedef enum
     {
@@ -279,6 +281,7 @@ extern "C"
 /*
 #pragma region Simplified Public API
  */
+    extern int dtp_vmem_server_main(bool *keep_running, dtp_async_api_t *api);
     extern int dtp_server_main(bool *keep_running);
     extern int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, uint8_t payload_id, uint16_t mtu, bool resume, dtp_t **session);
 

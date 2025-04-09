@@ -28,9 +28,9 @@ extern "C"
         uint32_t throughput; /** max server throughput in KB/second */
         // uint8_t timeout; /** number of seconds with no received packets that will stop the session */
         uint8_t nof_intervals; /** Number of segments to transfer, see the intervals below */
-        uint8_t payload_id; /** Payload ID, conceptual identifer for the payload to retrieve, semantic is entirely server-specific */
+        uint8_t payload_id; /** Payload ID, conceptual identifier for the payload to retrieve, semantic is entirely server-specific */
         uint16_t mtu; /** MTU size (size of the *useful* payload DTP will use to split the payload) in BYTES */
-        interval_t intervals[19]; /** list of start-stop pairs to transfer, number is set by nof_intervals above */
+        interval_t intervals[8]; /** list of start-stop pairs to transfer, number is set by nof_intervals above */
     } dtp_meta_req_t;
 
     typedef struct {
