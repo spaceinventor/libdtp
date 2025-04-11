@@ -207,10 +207,14 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
     for(uint8_t i = 0; i < ctx->request.nof_intervals && *(ctx->keep_running); i++)
     {
         uint32_t interval_start = ctx->request.intervals[i].start * (ctx->request.mtu - sizeof(uint32_t));
-        uint32_t interval_stop = ctx->request.intervals[i].end * (ctx->request.mtu - sizeof(uint32_t));
-        transfer.sent_in_interval = 0;
-        transfer.bytes_sent = interval_start;
-        if(interval_stop > ctx->payload_meta.size) {
+        uint32_t interval_stop;
+        if (ctx->request.intervals[i].end != UINT32_MAX) {
+            interval_stop = (ctx->request.intervals[i].end + 1) * (ctx->request.mtu - sizeof(uint32_t));
+            if (interval_stop > ctx->payload_meta.size) {
+                interval_stop = ctx->payload_meta.size;
+            }
+        } else {
+            /* We want the whole thing in one swoop */
             interval_stop = ctx->payload_meta.size;
             uint32_t fixed_end;
             if (interval_stop % (ctx->request.mtu - sizeof(uint32_t)) != 0) {
@@ -218,8 +222,10 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
             } else {
                 fixed_end = interval_stop / (ctx->request.mtu - sizeof(uint32_t));
             }
-            ctx->request.intervals[i].end = fixed_end;
-        }        
+            ctx->request.intervals[i].end = (fixed_end - 1);
+        }
+        transfer.sent_in_interval = 0;
+        transfer.bytes_sent = interval_start;
         transfer.bytes_in_interval = interval_stop - interval_start;
         dbg_log("interval_start: %u (seq: %u)", interval_start, ctx->request.intervals[i].start);
         dbg_log("interval_stop: %u (seq: %u)", interval_stop, ctx->request.intervals[i].end);
