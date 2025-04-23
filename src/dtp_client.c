@@ -179,14 +179,14 @@ dtp_result start_receiving_data(dtp_t *session)
     csp_listen(socket, 1);
     if(CSP_ERR_NONE == csp_bind(socket, 8)) {
         uint32_t expected_nof_packets = calculate_expected_nof_packets(session);
-        printf("Expected number of packets: %u\n", expected_nof_packets);
+        printf("Expected number of packets: %" PRIu32 "\n", expected_nof_packets);
         uint32_t nof_csp_packets = 0;
         while ((idle_ms <= (session->timeout * 1000)) && nof_csp_packets < expected_nof_packets)
         {
             packet = csp_recvfrom(socket, 1000);
             if(NULL == packet) {
                 idle_ms += 1000;
-                dbg_warn("No data received for %u ms, last packet_seq=%u", idle_ms, packet_seq);
+                dbg_warn("No data received for %" PRIu32 " ms, last packet_seq=%" PRIu32 "", idle_ms, packet_seq);
                 continue;
             }
             nof_csp_packets++;
@@ -195,7 +195,7 @@ dtp_result start_receiving_data(dtp_t *session)
             session->bytes_received += packet->length - (2 * sizeof(uint32_t));
             packet_seq = packet->data32[0] / (session->request_meta.mtu - (2 * sizeof(uint32_t)));
             session_id = packet->data32[1];
-            printf("Session ID: 0x%08x\n", session_id);
+            printf("Session ID: 0x%08" PRIx32 "\n", session_id);
         
             if(session->hooks.on_data_packet) {
                 if (false == session->hooks.on_data_packet(session, packet)) {
@@ -205,7 +205,7 @@ dtp_result start_receiving_data(dtp_t *session)
             csp_buffer_free(packet);
         }
         if (idle_ms >= (session->timeout * 1000)) {
-            dbg_warn("No data received for %u ms, bailing out", idle_ms);
+            dbg_warn("No data received for %" PRIu32 " ms, bailing out", idle_ms);
         }
         csp_socket_close(socket);
         if(session->hooks.on_end) {
@@ -216,7 +216,7 @@ dtp_result start_receiving_data(dtp_t *session)
     }
     uint32_t duration = now - session->start_ts;
     duration = duration?duration:1;
-    dbg_log("Received %lu bytes, last seq: %lu, status: %d", session->bytes_received, packet_seq, result);
-    dbg_log("Session duration: %u.%u s, avg throughput: %u KB/sec", (duration/1000),(duration - ((duration/1000)*1000)), ((session->bytes_received / duration) * 1000 ) / 1024);
+    dbg_log("Received %" PRIu32 " bytes, last seq: %" PRIu32 ", status: %d", session->bytes_received, packet_seq, result);
+    dbg_log("Session duration: %" PRIu32 ".%" PRIu32 " s, avg throughput: %" PRIu32 " KB/sec", (duration/1000),(duration - ((duration/1000)*1000)), ((session->bytes_received / duration) * 1000 ) / 1024);
     return result;
 }
