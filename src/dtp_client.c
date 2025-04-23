@@ -195,7 +195,6 @@ dtp_result start_receiving_data(dtp_t *session)
             session->bytes_received += packet->length - (2 * sizeof(uint32_t));
             packet_seq = packet->data32[0] / (session->request_meta.mtu - (2 * sizeof(uint32_t)));
             session_id = packet->data32[1];
-            printf("Session ID: 0x%08" PRIx32 "\n", session_id);
         
             if(session->hooks.on_data_packet) {
                 if (false == session->hooks.on_data_packet(session, packet)) {
