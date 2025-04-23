@@ -9,10 +9,8 @@
 #include "dtp/dtp_vmem_server.h"
 #include "dtp/dtp_session.h"
 
-int vmem_dtp_download(int node, int timeout, uint64_t address, uint32_t length, vmem_dtp_on_data_t *on_data, int version, int use_rdp, uint32_t thrughput)
+int vmem_request_dtp_start_download(dtp_t *session, int node, uint32_t session_id, int timeout, int version, int use_rdp, uint64_t vaddr, uint32_t size)
 {
-    uint8_t intervals = 1;
-
     /* Establish RDP connection */
     uint32_t opts = CSP_O_CRC32;
     if (use_rdp) {
@@ -37,16 +35,21 @@ int vmem_dtp_download(int node, int timeout, uint64_t address, uint32_t length, 
     /* DTP request */
     vmem_request->type = DTP_REQUEST_START_TRANSFER;
     dtp_start_req_t *request = (dtp_start_req_t *)&vmem_request->body[0];
-    request->session_id = htobe32(0); /* TODO: use the session ID */
-    request->vaddr = htobe64(address);
-    request->size = htobe32(length);
+    request->vaddr = htobe64(vaddr);
+    request->size = htobe32(size);
     
     /* DTP specifics */
-    request->meta.throughput = htobe32(thrughput);
-    request->meta.mtu = htobe16(VMEM_SERVER_MTU); /* MTU size (size of the *useful* payload DTP will use to split the payload) in BYTES */
-    request->meta.nof_intervals = intervals; /* Only one interval, since this is the initial one */
-    request->meta.intervals[0].start = htobe32(0);
-    request->meta.intervals[0].end = htobe32(UINT32_MAX);
+    request->meta.throughput = htobe32(session->request_meta.throughput); /* Throughput in KB/s */
+    request->meta.mtu = htobe16(session->request_meta.mtu); /* MTU size (size of the *useful* payload DTP will use to split the payload) in BYTES */
+    request->meta.session_id = htobe32(session_id); /* The session ID, representing this particular transfer */
+    request->meta.nof_intervals = session->request_meta.nof_intervals; /* Number of intervals */
+    if (request->meta.nof_intervals > (sizeof(request->meta.intervals) / sizeof(request->meta.intervals[0]))) {
+        request->meta.nof_intervals = (sizeof(request->meta.intervals) / sizeof(request->meta.intervals[0]));
+    }
+    for (uint8_t i = 0; i < request->meta.nof_intervals; i++) {
+        request->meta.intervals[i].start = htobe32(session->request_meta.intervals[i].start);
+        request->meta.intervals[i].end = htobe32(session->request_meta.intervals[i].end);
+    }
 
     /* Set the CSP packet length */
     packet->length = packet_len;
@@ -54,58 +57,14 @@ int vmem_dtp_download(int node, int timeout, uint64_t address, uint32_t length, 
     /* Send the request */
     csp_send(conn, packet);
 
+    /* Close connection */
     csp_close(conn);
-
-    dtp_t *session = NULL;
-    dtp_result res = DTP_OK;
-
-    session = dtp_acquire_session();
-    dtp_params remote_cfg = { .remote_cfg.node = node };
-    res = dtp_set_opt(session, DTP_REMOTE_CFG, &remote_cfg);
-    if (DTP_OK != res) {
-        goto get_out_please;
-    }
-
-    remote_cfg.throughput.value = thrughput;
-    res = dtp_set_opt(session, DTP_THROUGHPUT_CFG, &remote_cfg);
-    if (DTP_OK != res) {
-        goto get_out_please;
-    }
-
-    remote_cfg.timeout.value = timeout;
-    res = dtp_set_opt(session, DTP_TIMEOUT_CFG, &remote_cfg);
-    if (DTP_OK != res) {
-        goto get_out_please;
-    }
-    
-    remote_cfg.payload_id.value = UINT8_MAX;
-    res = dtp_set_opt(session, DTP_PAYLOAD_ID_CFG, &remote_cfg);
-    if (DTP_OK != res) {
-        goto get_out_please;
-    }
-    
-    remote_cfg.mtu.value = VMEM_SERVER_MTU;
-    res = dtp_set_opt(session, DTP_MTU_CFG, &remote_cfg);
-    if (DTP_OK != res) {
-        goto get_out_please;
-    }
-
-    session->payload_size = length;
-    session->hooks.on_data_packet = on_data;
-    session->hooks.hook_ctx = NULL;
-    res = start_receiving_data(session);
-    if (res != DTP_OK) {
-        printf("Error receiving data: %d\n", res);
-    }
-
-get_out_please:
-    dtp_release_session(session);
 
     return 0;
 
 }
 
-int vmem_dtp_stop_download(int node, int timeout, int version, int use_rdp) {
+int vmem_request_dtp_stop_download(int node, uint32_t session_id, int timeout, int version, int use_rdp) {
 
     /* Establish RDP connection */
     uint32_t opts = CSP_O_CRC32;
@@ -131,7 +90,7 @@ int vmem_dtp_stop_download(int node, int timeout, int version, int use_rdp) {
     /* DTP request */
     vmem_request->type = DTP_REQUEST_STOP_TRANSFER;
     dtp_stop_req_t *request = (dtp_stop_req_t *)&vmem_request->body[0];
-    request->session_id = htobe32(0);; /* TODO: use the session ID */
+    request->session_id = htobe32(session_id);
 
     /* Set the CSP packet length */
     packet->length = packet_len;
@@ -139,6 +98,7 @@ int vmem_dtp_stop_download(int node, int timeout, int version, int use_rdp) {
     /* Send the request */
     csp_send(conn, packet);
 
+    /* Close connection */
     csp_close(conn);
 
     return 0;

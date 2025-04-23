@@ -49,7 +49,7 @@ static void dtp_server_run(bool *keep_running)
 static uint32_t compute_transfer_size(dtp_server_transfer_ctx_t *ctx) {
     uint32_t size = 0;
     interval_t *cur_int;
-    uint32_t chunk_size = ctx->request.mtu - sizeof(uint32_t);
+    uint32_t chunk_size = ctx->request.mtu - (2 * sizeof(uint32_t));
     for (uint8_t i=0; i < ctx->request.nof_intervals; i++) {
         cur_int = &ctx->request.intervals[i];
         if(cur_int->end == UINT32_MAX) {
@@ -153,20 +153,21 @@ static bool dtp_server_poll_loop(uint32_t op, void *context) {
         }
 
         // Calculate the up-coming packet length
-        if((transfer->bytes_in_interval - transfer->sent_in_interval) > (transfer->ctx->request.mtu - sizeof(uint32_t))) {
+        if((transfer->bytes_in_interval - transfer->sent_in_interval) > (transfer->ctx->request.mtu - (2 * sizeof(uint32_t)))) {
             packet->length = transfer->ctx->request.mtu;
         } else {
-            // This is the last packet to send, its size is most likely not == ctx->request.mtu - sizeof(uint32_t)
-            packet->length = (transfer->bytes_in_interval - transfer->sent_in_interval) + sizeof(uint32_t);
+            // This is the last packet to send, its size is most likely not == ctx->request.mtu - (2 * sizeof(uint32_t))
+            packet->length = (transfer->bytes_in_interval - transfer->sent_in_interval) + (2 * sizeof(uint32_t));
             // Last packet in the entire transfer
             pkt_cnt = transfer->nof_packets_per_round;
         }
 
         // Put the amount of bytes sent in the first double word
-        memcpy(packet->data, &transfer->bytes_sent, sizeof(uint32_t));
+        packet->data32[0] = transfer->bytes_sent;
+        packet->data32[1] = transfer->ctx->request.session_id;
 
         // Get the packet payload data from the "user"
-        data_read = transfer->ctx->payload_meta.read(transfer->ctx->request.payload_id, transfer->bytes_sent, packet->data + sizeof(uint32_t), packet->length - sizeof(uint32_t), transfer->ctx->payload_meta.context);
+        data_read = transfer->ctx->payload_meta.read(transfer->ctx->request.payload_id, transfer->bytes_sent, packet->data + (2 * sizeof(uint32_t)), packet->length - (2 * sizeof(uint32_t)), transfer->ctx->payload_meta.context);
         if (data_read == 0){
             dbg_warn("could not read data from user");
             break;
@@ -206,10 +207,10 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
     dbg_log("Number of intervals: %u", ctx->request.nof_intervals);
     for(uint8_t i = 0; i < ctx->request.nof_intervals && *(ctx->keep_running); i++)
     {
-        uint32_t interval_start = ctx->request.intervals[i].start * (ctx->request.mtu - sizeof(uint32_t));
+        uint32_t interval_start = ctx->request.intervals[i].start * (ctx->request.mtu - (2 * sizeof(uint32_t)));
         uint32_t interval_stop;
         if (ctx->request.intervals[i].end != UINT32_MAX) {
-            interval_stop = (ctx->request.intervals[i].end + 1) * (ctx->request.mtu - sizeof(uint32_t));
+            interval_stop = (ctx->request.intervals[i].end + 1) * (ctx->request.mtu - (2 * sizeof(uint32_t)));
             if (interval_stop > ctx->payload_meta.size) {
                 interval_stop = ctx->payload_meta.size;
             }
@@ -217,10 +218,10 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
             /* We want the whole thing in one swoop */
             interval_stop = ctx->payload_meta.size;
             uint32_t fixed_end;
-            if (interval_stop % (ctx->request.mtu - sizeof(uint32_t)) != 0) {
-                fixed_end = interval_stop / (ctx->request.mtu - sizeof(uint32_t)) + 1;
+            if (interval_stop % (ctx->request.mtu - (2 * sizeof(uint32_t))) != 0) {
+                fixed_end = interval_stop / (ctx->request.mtu - (2 * sizeof(uint32_t))) + 1;
             } else {
-                fixed_end = interval_stop / (ctx->request.mtu - sizeof(uint32_t));
+                fixed_end = interval_stop / (ctx->request.mtu - (2 * sizeof(uint32_t)));
             }
             ctx->request.intervals[i].end = (fixed_end - 1);
         }

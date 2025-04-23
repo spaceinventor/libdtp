@@ -63,7 +63,7 @@ dtp_opt_session_hooks_cfg default_session_hooks __attribute__((weak)) = {
 };
 
 
-const uint32_t DTP_SESSION_VERSION = 1;
+const uint32_t DTP_SESSION_VERSION = 2;
 
 static void default_on_session_start(dtp_t *session) {
     dbg_log("Default on_start hook");
@@ -191,6 +191,9 @@ dtp_result dtp_set_opt(dtp_t *session, dtp_option option, dtp_params *param)
     case DTP_MTU_CFG:
         session->request_meta.mtu = param->mtu.value;
     break;
+    case DTP_SESSION_ID_CFG:
+        session->request_meta.session_id = param->session_id.value;
+    break;
     default:
         break;
     }
@@ -271,10 +274,10 @@ void *dtp_session_get_user_ctx(dtp_t *session) {
 
 dtp_on_data_info_t dtp_get_data_info(dtp_t *session, csp_packet_t * p) {
     dtp_on_data_info_t result = {
-        .packet_sequence_number = p->data32[0] / (session->request_meta.mtu - sizeof(uint32_t)),
+        .packet_sequence_number = p->data32[0] / (session->request_meta.mtu - (2 * sizeof(uint32_t))),
         .data_offset = p->data32[0],
-        .data_length = p->length - sizeof(uint32_t),
-        .data = p->data + sizeof(uint32_t),
+        .data_length = p->length - (2 * sizeof(uint32_t)),
+        .data = p->data + (2 * sizeof(uint32_t)),
     };
     return result;
 }

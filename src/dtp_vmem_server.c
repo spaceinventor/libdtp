@@ -37,10 +37,11 @@ static int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet, void
             uint32_t chunk_size = be16toh(request->meta.mtu) - sizeof(uint32_t);
 
             printf("Received DTP VMEM start transfer request.\n");
-            printf("\tSession ID: %"PRIu32"\n", be32toh(request->session_id));
+            printf("\tSession ID: %"PRIu32"\n", be32toh(request->meta.session_id));
             printf("\tMTU: %"PRIu16"\n", be16toh(request->meta.mtu));
             msg.meta.mtu = be16toh(request->meta.mtu);
             msg.meta.throughput = be32toh(request->meta.throughput);
+            msg.meta.session_id = be32toh(request->meta.session_id);
             msg.meta.payload_id = request->meta.payload_id;
             msg.meta.nof_intervals = request->meta.nof_intervals;
             printf("\tStart address: 0x%016"PRIX64"\n", be64toh(request->vaddr));

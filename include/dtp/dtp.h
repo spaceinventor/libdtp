@@ -57,6 +57,7 @@ extern "C"
         DTP_TIMEOUT_CFG = 1 << 3,
         DTP_PAYLOAD_ID_CFG = 1 << 4,
         DTP_MTU_CFG = 1 << 5,
+        DTP_SESSION_ID_CFG = 1 << 6,
     } dtp_option;
 
     /**
@@ -81,6 +82,10 @@ extern "C"
     typedef struct {
         uint16_t value; /// MTU size to use
     } dtp_opt_mtu_cfg;
+
+    typedef struct {
+        uint32_t value; /// Session ID to use
+    } dtp_opt_session_id_cfg;
 
     /**
      * configuration - DTP session hooks
@@ -125,6 +130,14 @@ extern "C"
          */        
         void (*on_deserialize)(dtp_t *session, void *context);
 
+        /**
+         * Called when session is about to dump some info
+         * @param session the current session
+         * @param info the info to dump
+         * @param context pointer to a user defined object given to dtp_deserialize_session()
+         */
+        void(*on_dump_info)(dtp_t *session, uint32_t info, void *context);
+
         void *hook_ctx;
     } dtp_opt_session_hooks_cfg;
 
@@ -161,6 +174,7 @@ extern "C"
         dtp_opt_timeout_cfg timeout;
         dtp_opt_payload_id_cfg payload_id;
         dtp_opt_mtu_cfg mtu;
+        dtp_opt_session_id_cfg session_id;
     } dtp_params;
 
 /*
@@ -172,6 +186,8 @@ extern "C"
      * @return valid pointer to session object or NULL in case of failure, see csftp_errno()
      */
     dtp_t *dtp_acquire_session();
+
+    dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint16_t max_throughput, uint8_t timeout, uint8_t payload_id, char *filename, uint16_t mtu, bool resume);
 
     /**
      * Release a previously acquired handle on one of the pre-allocated sessions
@@ -282,6 +298,7 @@ extern "C"
 #pragma region Simplified Public API
  */
     extern int dtp_vmem_server_main(bool *keep_running, dtp_async_api_t *api);
+    extern int dtp_vmem_client_main(dtp_t *session);
     extern int dtp_server_main(bool *keep_running);
     extern int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, uint8_t payload_id, uint16_t mtu, bool resume, dtp_t **session);
 
