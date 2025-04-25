@@ -34,7 +34,7 @@ static int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet, void
         case  DTP_REQUEST_START_TRANSFER:
         {
             dtp_start_req_t *request = (dtp_start_req_t *)&vmem_request->body[0];
-            uint32_t chunk_size = be16toh(request->meta.mtu) - sizeof(uint32_t);
+            uint32_t chunk_size = be16toh(request->meta.mtu) - (2 * sizeof(uint32_t));
 
             printf("Received DTP VMEM start transfer request.\n");
             printf("\tSession ID: %"PRIu32"\n", be32toh(request->meta.session_id));

@@ -37,7 +37,7 @@ dtp_result read_remote_meta_resp(dtp_t *session)
         dbg_log("Setting session total bytes to %u", meta_resp->size_in_bytes);
         csp_buffer_free(packet);
     } else {
-        session->errno = DTP_CONNECTION_FAILED;
+        session->dtp_errno = DTP_CONNECTION_FAILED;
     }
     return res;
 }

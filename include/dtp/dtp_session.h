@@ -32,7 +32,7 @@ extern "C"
         uint32_t payload_size;
         uint32_t start_ts;
         uint32_t end_ts;
-        dtp_errno_t errno;
+        dtp_errno_t dtp_errno;
         dtp_meta_req_t request_meta;
         uint8_t timeout;
     } dtp_t;

@@ -100,7 +100,7 @@ dtp_errno_t dtp_errno(dtp_t *session)
 {
     if (0 != session)
     {
-        return session->errno;
+        return session->dtp_errno;
     }
     return last_error;
 }
@@ -147,12 +147,12 @@ dtp_result dtp_release_session(dtp_t *session)
             csp_close(static_sessions[i].session.conn);
             dtp_t *session = &static_sessions[i].session;
             /* Save session last error in case somebody asks after releasing */
-            last_error = session->errno;
+            last_error = session->dtp_errno;
             session->user_context = NULL;
             session->bytes_received = 0;
             session->request_meta.nof_intervals = 0;
             static_sessions[i].in_use = false;
-            static_sessions[i].session.errno = DTP_NO_ERR;
+            static_sessions[i].session.dtp_errno = DTP_NO_ERR;
             return DTP_OK;
         }
     }
@@ -247,13 +247,13 @@ dtp_result dtp_deserialize_session(dtp_t *session, void *ctx)
 }
 
 /* Internal functions */
-void dtp_set_errno(dtp_t *session, dtp_errno_t errno)
+void dtp_set_errno(dtp_t *session, dtp_errno_t err)
 {
     if (0 != session)
     {
-        session->errno = errno;
+        session->dtp_errno = err;
     } else {
-        last_error = errno;
+        last_error = err;
     }
 }
 

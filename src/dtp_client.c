@@ -140,7 +140,7 @@ dtp_result dtp_start_transfer(dtp_t *session)
     dtp_result res = DTP_ERR;
     csp_conn_t *conn = csp_connect(CSP_PRIO_HIGH, session->remote_cfg.node, 7, 5, CSP_O_RDP);
     if (NULL == conn) {
-        session->errno = DTP_CONNECTION_FAILED;
+        session->dtp_errno = DTP_CONNECTION_FAILED;
         goto get_out;
     }
     session->conn = conn;
