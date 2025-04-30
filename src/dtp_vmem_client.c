@@ -103,3 +103,61 @@ int vmem_request_dtp_stop_download(int node, uint32_t session_id, int timeout, i
 
     return 0;
 }
+
+int vmem_request_dtp_status(int node, int timeout, int version, int use_rdp) {
+
+    int result = -1;
+    
+    /* Establish RDP connection */
+    uint32_t opts = CSP_O_CRC32;
+    if (use_rdp) {
+        opts |= CSP_O_RDP;
+    }
+    csp_conn_t * conn = csp_connect(CSP_PRIO_HIGH, node, VMEM_PORT_SERVER, timeout, opts);
+    if (conn == NULL) {
+        return -1;
+    }
+
+    uint16_t packet_len = sizeof(dtp_vmem_request_t);
+    csp_packet_t * packet = csp_buffer_get(packet_len);
+    if (packet == NULL) {
+        return -1;
+    }
+
+    /* VMEM request header */
+    dtp_vmem_request_t *vmem_request = (dtp_vmem_request_t *)&packet->data[0];
+    vmem_request->hdr.type = VMEM_SERVER_DTP_REQUEST;
+    vmem_request->hdr.version = version;
+
+    /* DTP request */
+    vmem_request->type = DTP_REQUEST_TRANSFER_STATUS;
+
+    /* Set the CSP packet length */
+    packet->length = packet_len;
+
+    /* Send the request */
+    csp_send(conn, packet);
+
+    /* Wait for the response */
+    csp_packet_t *reponse = csp_read(conn, timeout);
+    if (reponse) {
+        /* Check the response */
+        if (reponse->length >= sizeof(dtp_status_resp_t)) {
+            dtp_status_resp_t *response = (dtp_status_resp_t *)&reponse->data[0];
+            uint32_t session_id = be32toh(response->session_id);
+            uint32_t status = be32toh(response->status);
+            printf("Received DTP VMEM status response.\n");
+            printf("\tSession ID: %"PRIu32"\n", session_id);
+            printf("\tStatus: %"PRIu32"\n", status);
+            result = (int)status;
+        } else {
+            printf("Invalid response length\n");
+        }
+        csp_buffer_free(reponse);
+    }
+
+    /* Close connection */
+    csp_close(conn);
+
+    return result;
+}

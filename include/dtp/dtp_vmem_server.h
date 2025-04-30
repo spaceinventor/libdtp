@@ -9,6 +9,10 @@
 
 #define DTP_REQUEST_START_TRANSFER 0x00
 #define DTP_REQUEST_STOP_TRANSFER 0x01
+#define DTP_REQUEST_TRANSFER_STATUS 0x02
+
+#define DTP_TRANSFER_STATUS_OK 0UL
+#define DTP_TRANSFER_STATUS_BUSY (1UL << 0)
 
 typedef struct {
     uint32_t session_id;
@@ -20,7 +24,12 @@ typedef struct {
 typedef struct {
     uint32_t session_id;
 } __attribute__((__packed__)) dtp_stop_req_t;
-        
+
+typedef struct {
+    uint32_t session_id;
+    uint32_t status;
+} __attribute__((__packed__)) dtp_status_resp_t;
+
 typedef struct {
     vmem_request_hdr_t hdr;
     uint8_t type;

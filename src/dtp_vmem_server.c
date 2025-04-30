@@ -14,6 +14,7 @@
 
 typedef struct dtp_vmem_context_s {
     bool carryon;
+    uint32_t session_id;
     message_queue_t queue;
     uint8_t queue_storage[10 * sizeof(dtp_msg_t)];
     vmem_handler_obj_t vmem_handler;
@@ -62,6 +63,8 @@ static int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet, void
             msg.vaddr = be64toh(request->vaddr);
             msg.size = be32toh(request->size);
 
+            vmem_context->session_id = be32toh(request->meta.session_id);
+
             message_queue_send(&vmem_context->queue, &msg);
         }
         break;
@@ -75,6 +78,27 @@ static int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet, void
             /* Stop the transfer */
             printf("Stopping the DTP transfer...\n");
             vmem_context->carryon = false;
+            vmem_context->session_id = 0;
+        }
+        break;
+
+        case DTP_REQUEST_TRANSFER_STATUS:
+        {
+            printf("Received DTP VMEM transfer status request.\n");
+            /* Send the response to the requester */
+            csp_packet_t *buffer = csp_buffer_get(sizeof(dtp_status_resp_t));
+            if (buffer) {
+                dtp_status_resp_t *response = (dtp_status_resp_t *)&buffer->data[0];
+                buffer->length = sizeof(dtp_status_resp_t);
+                response->session_id = htobe32(vmem_context->session_id);
+                if (vmem_context->carryon) {
+                    response->status = htobe32(DTP_TRANSFER_STATUS_BUSY);
+                } else {
+                    response->status = htobe32(DTP_TRANSFER_STATUS_OK);
+                }
+                /* Send the response back on the connection */
+                csp_send(conn, buffer);
+            }
         }
         break;
     }
