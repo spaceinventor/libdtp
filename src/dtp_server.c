@@ -101,6 +101,8 @@ static void dtp_vmem_server_run(bool *keep_running, dtp_async_api_t *api)
                 server_transfer_ctx.payload_meta.size = msg.size;
                 server_transfer_ctx.payload_meta.base = msg.vaddr;
 
+                *keep_running = true;
+
                 printf("address: 0x%016"PRIX64"\n", msg.vaddr);
                 printf("size: %"PRIu32"\n", msg.size);
                 server_transfer_ctx.size_in_bytes = compute_transfer_size(&server_transfer_ctx);
@@ -115,8 +117,8 @@ static void dtp_vmem_server_run(bool *keep_running, dtp_async_api_t *api)
                 It can be stopped by setting the 'keep_running' flag on the object
                 passed on to the process. */
                 start_sending_data(&server_transfer_ctx);
-                /* Set the keep running flag if it was reset */
-                *keep_running = true;
+                /* Reset the keep_running flag to indicate transfer is done */
+                *keep_running = false;
                 dbg_log("Transfer done");
             }
             break;

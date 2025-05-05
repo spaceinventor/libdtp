@@ -132,9 +132,6 @@ void dtp_vmem_server_task(void * param) {
         .context = &dtp_vmem_context.queue,
     };
 
-    /* Set the task to be carrying on by default */
-    dtp_vmem_context.carryon = true;
-
     /* Create the message queue to be used for async task communication */
     message_queue_create(&dtp_vmem_context.queue, sizeof(dtp_msg_t), 10, &dtp_vmem_context.queue_storage[0]);
 
