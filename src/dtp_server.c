@@ -212,27 +212,27 @@ static void calculate_roundtime_and_packets_per_round(uint32_t throughput, uint1
     }
     
     /* Can we optimize the round time */
-    float factor = 1.0;
+    uint32_t factor = 1;
     float error;
     do {
         factor *= 10.0;
-        error = ((float)(*packets_per_round)) - (((float)(*packets_per_round) / factor) * factor);
-        printf("Error: %f\n", error);
-        if ((*round_time_ms) / (uint32_t)factor < 10) {
-            printf("Round time too short\n");
+        uint32_t __throughput = (((*packets_per_round) / factor) * mtu) / ((*round_time_ms) / factor) * 1000UL;
+        error = fabs(((float)throughput - (float)__throughput)/(float)throughput)*100.0;
+        if ((*round_time_ms) / factor < 10) {
+            dbg_log("Round time too short (<10ms)\n");
             break;
         }
-    } while(fabs(error) < 10);
+    } while(error < 5.0);
     
     /* Roll back one factor of 10 */
     factor = factor / 10;
     (*round_time_ms) /= factor;
     (*packets_per_round) /= factor;
-    float bytes_per_ms = (float)((*packets_per_round) * mtu) / (*round_time_ms);
+    float bytes_per_ms = ((float)(*packets_per_round) * mtu) / (float)(*round_time_ms);
     
     dbg_log("Round time: %" PRIu32 " [ms]", *round_time_ms);
     dbg_log("Packets per round: %" PRIu32, *packets_per_round);
-    dbg_log("Resulting in: %f [bytes/s]", bytes_per_ms * 1000.0);
+    dbg_log("Resulting throughput: %f [bytes/s]", bytes_per_ms * 1000.0);
 }
 
 extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
