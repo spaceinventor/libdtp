@@ -164,7 +164,6 @@ dtp_result start_receiving_data(dtp_t *session)
     dtp_result result = DTP_OK;
     csp_packet_t *packet;
     uint32_t packet_seq = 0;
-    __attribute__((unused)) uint32_t session_id = 0;
     uint32_t idle_ms = 0;
     csp_socket_t sock = { .opts = CSP_SO_CONN_LESS };
     csp_socket_t *socket = &sock;
@@ -194,7 +193,6 @@ dtp_result start_receiving_data(dtp_t *session)
             idle_ms = 0;
             session->bytes_received += packet->length - (2 * sizeof(uint32_t));
             packet_seq = packet->data32[0] / (session->request_meta.mtu - (2 * sizeof(uint32_t)));
-            session_id = packet->data32[1];
         
             if(session->hooks.on_data_packet) {
                 if (false == session->hooks.on_data_packet(session, packet)) {
