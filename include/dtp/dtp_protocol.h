@@ -67,6 +67,8 @@ extern "C"
      * @return integer number of CSP packets to use to send total bytes
      */
     extern uint32_t compute_nof_packets(uint32_t total, uint32_t effective_payload_size);
+
+    extern void compute_transmit_metrics(dtp_meta_req_t *request, uint32_t *round_time_ms, uint32_t *packets_per_round);
 #ifdef __cplusplus
 }
 #endif

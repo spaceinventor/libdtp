@@ -177,8 +177,12 @@ dtp_result start_receiving_data(dtp_t *session)
     dbg_log("Start receiving data");
     csp_listen(socket, 1);
     if(CSP_ERR_NONE == csp_bind(socket, 8)) {
-        uint32_t expected_nof_packets = calculate_expected_nof_packets(session);
-        printf("Expected number of packets: %" PRIu32 "\n", expected_nof_packets);
+        uint32_t expected_nof_packets;
+        uint32_t round_time_ms;
+        uint32_t packets_per_round;
+        expected_nof_packets = calculate_expected_nof_packets(session);
+        compute_transmit_metrics(&session->request_meta, &round_time_ms, &packets_per_round);
+        printf("Expected number of packets: %" PRIu32 " at %" PRIu32 " bytes/s\n", expected_nof_packets, session->request_meta.throughput);
         uint32_t nof_csp_packets = 0;
         while ((idle_ms <= (session->timeout * 1000)) && nof_csp_packets < expected_nof_packets)
         {

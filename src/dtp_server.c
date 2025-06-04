@@ -1,4 +1,3 @@
-#include <math.h>
 #include <csp/csp.h>
 #include <csp/arch/csp_time.h>
 #include "dtp/dtp.h"
@@ -194,47 +193,6 @@ static bool dtp_server_poll_loop(uint32_t op, void *context) {
 
 }
 
-static void calculate_roundtime_and_packets_per_round(uint32_t throughput, uint16_t mtu, uint32_t *round_time_ms, uint32_t *packets_per_round) {
-
-    uint32_t packets_sec = throughput / mtu;
-    uint32_t secs_packet = mtu / throughput;
-    dbg_log("Throughput: %"PRIu32" [bytes/s] using MTU: %"PRIu16" [bytes]", throughput, mtu);
-    dbg_log("Packets/second: %" PRIu32, packets_sec);
-    dbg_log("Seconds/packet: %" PRIu32, secs_packet);
-    
-    /* Calculate the round time and the packets per round */
-    if (secs_packet > packets_sec) {
-        (*round_time_ms) = secs_packet * 1000;
-        (*packets_per_round) = 1;
-    } else {
-        (*round_time_ms) = 1000;
-        (*packets_per_round) = packets_sec;
-    }
-    
-    /* Can we optimize the round time */
-    uint32_t factor = 1;
-    float error;
-    do {
-        factor *= 10.0;
-        uint32_t __throughput = (((*packets_per_round) / factor) * mtu) / ((*round_time_ms) / factor) * 1000UL;
-        error = fabs(((float)throughput - (float)__throughput)/(float)throughput)*100.0;
-        if ((*round_time_ms) / factor < 10) {
-            dbg_log("Round time too short (<10ms)\n");
-            break;
-        }
-    } while(error < 5.0);
-    
-    /* Roll back one factor of 10 */
-    factor = factor / 10;
-    (*round_time_ms) /= factor;
-    (*packets_per_round) /= factor;
-    float bytes_per_ms = ((float)(*packets_per_round) * mtu) / (float)(*round_time_ms);
-    
-    dbg_log("Round time: %" PRIu32 " [ms]", *round_time_ms);
-    dbg_log("Packets per round: %" PRIu32, *packets_per_round);
-    dbg_log("Resulting throughput: %f [bytes/s]", bytes_per_ms * 1000.0);
-}
-
 extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
 {
     dtp_result result = DTP_OK;
@@ -245,7 +203,7 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
     transfer.nof_csp_packets = 0;
     uint32_t round_time_ms = 0;
 
-    calculate_roundtime_and_packets_per_round(ctx->request.throughput, ctx->request.mtu, &round_time_ms, &transfer.nof_packets_per_round);
+    compute_transmit_metrics(&ctx->request, &round_time_ms, &transfer.nof_packets_per_round);
 
     dbg_log("Number of intervals: %u", ctx->request.nof_intervals);
     for(uint8_t i = 0; i < ctx->request.nof_intervals && *(ctx->keep_running); i++)
