@@ -202,8 +202,9 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
     transfer.bytes_sent = 0;
     transfer.nof_csp_packets = 0;
     uint32_t round_time_ms = 0;
+    __attribute__((unused)) uint32_t resulting_throughput = 0;
 
-    compute_transmit_metrics(&ctx->request, &round_time_ms, &transfer.nof_packets_per_round);
+    compute_transmit_metrics(&ctx->request, &round_time_ms, &transfer.nof_packets_per_round, &resulting_throughput);
 
     dbg_log("Number of intervals: %u", ctx->request.nof_intervals);
     for(uint8_t i = 0; i < ctx->request.nof_intervals && *(ctx->keep_running); i++)

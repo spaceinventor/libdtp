@@ -68,7 +68,7 @@ extern "C"
      */
     extern uint32_t compute_nof_packets(uint32_t total, uint32_t effective_payload_size);
 
-    extern void compute_transmit_metrics(dtp_meta_req_t *request, uint32_t *round_time_ms, uint32_t *packets_per_round);
+    extern void compute_transmit_metrics(dtp_meta_req_t *request, uint32_t *round_time_ms, uint32_t *packets_per_round, uint32_t *resulting_throughput);
 #ifdef __cplusplus
 }
 #endif

@@ -180,8 +180,10 @@ dtp_result start_receiving_data(dtp_t *session)
         uint32_t expected_nof_packets;
         uint32_t round_time_ms;
         uint32_t packets_per_round;
+        uint32_t resulting_throughput;
         expected_nof_packets = calculate_expected_nof_packets(session);
-        compute_transmit_metrics(&session->request_meta, &round_time_ms, &packets_per_round);
+        compute_transmit_metrics(&session->request_meta, &round_time_ms, &packets_per_round, &resulting_throughput);
+        uint32_t total_transfer_duration = (expected_nof_packets * round_time_ms) / packets_per_round;
         printf("Expected number of packets: %" PRIu32 " at %" PRIu32 " bytes/s\n", expected_nof_packets, session->request_meta.throughput);
         uint32_t nof_csp_packets = 0;
         while ((idle_ms <= (session->timeout * 1000)) && nof_csp_packets < expected_nof_packets)

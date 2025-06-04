@@ -53,9 +53,9 @@ uint32_t compute_nof_packets(uint32_t total, uint32_t effective_payload_size) {
     return expected_nof_packets;
 }
 
-void compute_transmit_metrics(dtp_meta_req_t *request, uint32_t *round_time_ms, uint32_t *packets_per_round) {
+void compute_transmit_metrics(dtp_meta_req_t *request, uint32_t *round_time_ms, uint32_t *packets_per_round, uint32_t *resulting_throughput) {
 
-    uint32_t mtu = request->mtu;
+    uint32_t mtu = request->mtu - (2 * sizeof(uint32_t)); // MTU minus the two 32-bit words for the sequence number and session ID
     uint32_t throughput = request->throughput;
     uint32_t packets_sec = throughput / mtu;
     uint32_t secs_packet = mtu / throughput;
@@ -90,7 +90,8 @@ void compute_transmit_metrics(dtp_meta_req_t *request, uint32_t *round_time_ms, 
     (*round_time_ms) /= factor;
     (*packets_per_round) /= factor;
     float bytes_per_ms = ((float)(*packets_per_round) * mtu) / (float)(*round_time_ms);
-    
+    (*resulting_throughput) = (uint32_t)(bytes_per_ms * 1000.0);
+
     dbg_log("Round time: %" PRIu32 " [ms]", *round_time_ms);
     dbg_log("Packets per round: %" PRIu32, *packets_per_round);
     dbg_log("Resulting throughput: %f [bytes/s]", bytes_per_ms * 1000.0);
