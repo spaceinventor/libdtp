@@ -1,3 +1,4 @@
+#include <math.h>
 #include <csp/csp.h>
 #include <csp/arch/csp_time.h>
 #include "dtp/dtp.h"
@@ -193,6 +194,47 @@ static bool dtp_server_poll_loop(uint32_t op, void *context) {
 
 }
 
+static void calculate_roundtime_and_packets_per_round(uint32_t throughput, uint16_t mtu, uint32_t *round_time_ms, uint32_t *packets_per_round) {
+
+    uint32_t packets_sec = throughput / mtu;
+    uint32_t secs_packet = mtu / throughput;
+    dbg_log("Throughput: %"PRIu32" [bytes/s] using MTU: %"PRIu16" [bytes]", throughput, mtu);
+    dbg_log("Packets/second: %" PRIu32, packets_sec);
+    dbg_log("Seconds/packet: %" PRIu32, secs_packet);
+    
+    /* Calculate the round time and the packets per round */
+    if (secs_packet > packets_sec) {
+        (*round_time_ms) = secs_packet * 1000;
+        (*packets_per_round) = 1;
+    } else {
+        (*round_time_ms) = 1000;
+        (*packets_per_round) = packets_sec;
+    }
+    
+    /* Can we optimize the round time */
+    float factor = 1.0;
+    float error;
+    do {
+        factor *= 10.0;
+        error = ((float)(*packets_per_round)) - (((float)(*packets_per_round) / factor) * factor);
+        printf("Error: %f\n", error);
+        if ((*round_time_ms) / (uint32_t)factor < 10) {
+            printf("Round time too short\n");
+            break;
+        }
+    } while(fabs(error) < 10);
+    
+    /* Roll back one factor of 10 */
+    factor = factor / 10;
+    (*round_time_ms) /= factor;
+    (*packets_per_round) /= factor;
+    float bytes_per_ms = (float)((*packets_per_round) * mtu) / (*round_time_ms);
+    
+    dbg_log("Round time: %" PRIu32 " [ms]", *round_time_ms);
+    dbg_log("Packets per round: %" PRIu32, *packets_per_round);
+    dbg_log("Resulting in: %f [bytes/s]", bytes_per_ms * 1000.0);
+}
+
 extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
 {
     dtp_result result = DTP_OK;
@@ -201,10 +243,9 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
     transfer.ctx = ctx;
     transfer.bytes_sent = 0;
     transfer.nof_csp_packets = 0;
-    dbg_log("Start sending data, setting max throughput to %u KB/sec", ctx->request.throughput);
-    uint32_t max_throughput = ctx->request.throughput * 1024; // In bytes/second
-    uint32_t packets_second = (max_throughput / ctx->request.mtu);
-    dbg_log("Throughput in packets/sec: %u", packets_second);
+    uint32_t round_time_ms = 0;
+
+    calculate_roundtime_and_packets_per_round(ctx->request.throughput, ctx->request.mtu, &round_time_ms, &transfer.nof_packets_per_round);
 
     dbg_log("Number of intervals: %u", ctx->request.nof_intervals);
     for(uint8_t i = 0; i < ctx->request.nof_intervals && *(ctx->keep_running); i++)
@@ -234,12 +275,10 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
         dbg_log("interval_stop: %u (seq: %u)", interval_stop, ctx->request.intervals[i].end);
         dbg_log("bytes_in_interval: %u", transfer.bytes_in_interval);
 
-        uint32_t round_time = 100;
-        transfer.nof_packets_per_round = (packets_second * round_time) / 1000;
-        dbg_log("Sending %d packets every %d ms\n", transfer.nof_packets_per_round, round_time);
+        dbg_log("Sending %d packets every %d ms\n", transfer.nof_packets_per_round, round_time_ms);
 
         /* Trigger a poll'ing operation for this interval */
-        os_hal_start_poll_operation(round_time, 0, dtp_server_poll_loop, &transfer);
+        os_hal_start_poll_operation(round_time_ms, 0, dtp_server_poll_loop, &transfer);
 
         dbg_log("sent_in_interval: %u", transfer.sent_in_interval);
     }

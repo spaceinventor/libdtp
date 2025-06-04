@@ -39,7 +39,7 @@ int vmem_request_dtp_start_download(dtp_t *session, int node, uint32_t session_i
     request->size = htobe32(size);
     
     /* DTP specifics */
-    request->meta.throughput = htobe32(session->request_meta.throughput); /* Throughput in KB/s */
+    request->meta.throughput = htobe32(session->request_meta.throughput); /* Throughput in bytes/second */
     request->meta.mtu = htobe16(session->request_meta.mtu); /* MTU size (size of the *useful* payload DTP will use to split the payload) in BYTES */
     request->meta.session_id = htobe32(session_id); /* The session ID, representing this particular transfer */
     request->meta.nof_intervals = session->request_meta.nof_intervals; /* Number of intervals */

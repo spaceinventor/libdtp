@@ -68,7 +68,7 @@ extern "C"
     } dtp_opt_remote_cfg;
 
     typedef struct {
-        uint32_t value; /// MAX Throughout in KB/s
+        uint32_t value; /// MAX Throughout in B/s
     } dtp_opt_throughput_cfg;
 
     typedef struct {
@@ -187,7 +187,7 @@ extern "C"
      */
     dtp_t *dtp_acquire_session();
 
-    dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint16_t max_throughput, uint8_t timeout, uint8_t payload_id, char *filename, uint16_t mtu, bool resume);
+    dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, char *filename, uint16_t mtu, bool resume);
 
     /**
      * Release a previously acquired handle on one of the pre-allocated sessions
@@ -300,7 +300,7 @@ extern "C"
     extern int dtp_vmem_server_main(bool *keep_running, dtp_async_api_t *api);
     extern int dtp_vmem_client_main(dtp_t *session);
     extern int dtp_server_main(bool *keep_running);
-    extern int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, uint8_t payload_id, uint16_t mtu, bool resume, dtp_t **session);
+    extern int dtp_client_main(uint32_t server, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, uint16_t mtu, bool resume, dtp_t **session);
 
 /*
 #pragma endregion

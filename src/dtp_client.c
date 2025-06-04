@@ -27,7 +27,7 @@ static uint32_t calculate_expected_nof_packets(dtp_t *session) {
     return expected_nof_packets;
 }
 
-dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint16_t max_throughput, uint8_t timeout, uint8_t payload_id, char *filename, uint16_t mtu, bool resume) {
+dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, char *filename, uint16_t mtu, bool resume) {
     dtp_t *session = NULL;
     dtp_result res = DTP_OK;
 
@@ -109,7 +109,7 @@ int dtp_vmem_client_main(dtp_t *session) {
     return res;
 }
 
-int dtp_client_main(uint32_t server, uint16_t max_throughput, uint8_t timeout, uint8_t payload_id, uint16_t mtu, bool resume, dtp_t **out_session) {
+int dtp_client_main(uint32_t server, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, uint16_t mtu, bool resume, dtp_t **out_session) {
     dtp_t *session = NULL;
     dtp_result res = DTP_OK;
 
@@ -164,7 +164,7 @@ dtp_result start_receiving_data(dtp_t *session)
     dtp_result result = DTP_OK;
     csp_packet_t *packet;
     uint32_t packet_seq = 0;
-    uint32_t session_id = 0;
+    __attribute__((unused)) uint32_t session_id = 0;
     uint32_t idle_ms = 0;
     csp_socket_t sock = { .opts = CSP_SO_CONN_LESS };
     csp_socket_t *socket = &sock;
@@ -216,6 +216,6 @@ dtp_result start_receiving_data(dtp_t *session)
     uint32_t duration = now - session->start_ts;
     duration = duration?duration:1;
     dbg_log("Received %" PRIu32 " bytes, last seq: %" PRIu32 ", status: %d", session->bytes_received, packet_seq, result);
-    dbg_log("Session duration: %" PRIu32 ".%" PRIu32 " s, avg throughput: %" PRIu32 " KB/sec", (duration/1000),(duration - ((duration/1000)*1000)), ((session->bytes_received / duration) * 1000 ) / 1024);
+    dbg_log("Session duration: %" PRIu32 ".%" PRIu32 " s, avg throughput: %f KB/sec", (duration/1000),(duration - ((duration/1000)*1000)), (float)((session->bytes_received / duration) * 1000 ) / 1024.0);
     return result;
 }
