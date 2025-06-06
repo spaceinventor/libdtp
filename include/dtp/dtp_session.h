@@ -24,6 +24,7 @@ extern "C"
      */
     typedef struct dtp_t
     {
+        bool active;
         csp_conn_t *conn;
         void *user_context;
         dtp_opt_remote_cfg remote_cfg;

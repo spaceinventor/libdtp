@@ -22,7 +22,8 @@ extern "C"
     typedef enum
     {
         DTP_OK, //!< Chill, all good
-        DTP_ERR //!< Hmm, check errno...
+        DTP_ERR, //!< Hmm, check errno...
+        DTP_CANCELLED, //!< Operation was cancelled
     } dtp_result;
 
     /**
@@ -38,6 +39,7 @@ extern "C"
         DTP_CONNECTION_FAILED, //!< Connecting to the server failed, for some reason
         DTP_MALLOC_FAILED, //!< Could not allocate a mandatory piece of memory
         DTP_NOT_IMPLEMENTED, //!< Still under construction, sorry
+        DTP_SESSION_EXHAUSTED, //!< No more data in the current DTP session
         DTP_LAST_ERR
     } dtp_errno_t;
 
@@ -288,8 +290,9 @@ extern "C"
      * 
      * @return DTP_OK if session was stopped sucessfully, or DTP_ERR in case of failure, see csftp_errno()
      */
-    dtp_result dtp_stop_transfer(dtp_t *session);
+    dtp_result dtp_stop_transfer(uint32_t session_id);
 
+    bool dtp_is_active(dtp_t *session);
 /*
 #pragma endregion
  */

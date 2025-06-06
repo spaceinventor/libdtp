@@ -53,8 +53,11 @@ dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_th
         }
         if (session->bytes_received == session->payload_size || session->request_meta.nof_intervals == 0) {
             dbg_log("No more data to fetch.");
+            session->dtp_errno = DTP_SESSION_EXHAUSTED;
             goto get_out_please;
         }
+        dtp_params remote_cfg = { .throughput.value = max_throughput };
+        dtp_set_opt(session, DTP_THROUGHPUT_CFG, &remote_cfg);
     } else {
         dtp_params remote_cfg = { .remote_cfg.node = server };
         res = dtp_set_opt(session, DTP_REMOTE_CFG, &remote_cfg);
@@ -168,58 +171,89 @@ dtp_result start_receiving_data(dtp_t *session)
     csp_socket_t sock = { .opts = CSP_SO_CONN_LESS };
     csp_socket_t *socket = &sock;
     session->start_ts = csp_get_ms();
-    uint32_t now = session->start_ts;
+    uint32_t now_ts_ms = session->start_ts;
     socket->opts = CSP_SO_CONN_LESS;
 
     if(session->hooks.on_start) {
         session->hooks.on_start(session);
     }
+
+    session->active = true;
+
     dbg_log("Start receiving data");
     csp_listen(socket, 1);
-    if(CSP_ERR_NONE == csp_bind(socket, 8)) {
-        uint32_t expected_nof_packets;
-        uint32_t round_time_ms;
-        uint32_t packets_per_round;
-        uint32_t resulting_throughput;
-        expected_nof_packets = calculate_expected_nof_packets(session);
-        compute_transmit_metrics(&session->request_meta, &round_time_ms, &packets_per_round, &resulting_throughput);
-        uint32_t total_transfer_duration = (expected_nof_packets * round_time_ms) / packets_per_round;
-        printf("Expected number of packets: %" PRIu32 " at %" PRIu32 " bytes/s\n", expected_nof_packets, session->request_meta.throughput);
-        uint32_t nof_csp_packets = 0;
-        while ((idle_ms <= (session->timeout * 1000)) && nof_csp_packets < expected_nof_packets)
-        {
-            packet = csp_recvfrom(socket, 1000);
-            if(NULL == packet) {
-                idle_ms += 1000;
-                dbg_warn("No data received for %" PRIu32 " ms, last packet_seq=%" PRIu32 "", idle_ms, packet_seq);
-                continue;
-            }
-            nof_csp_packets++;
-            now = csp_get_ms();
-            idle_ms = 0;
-            session->bytes_received += packet->length - (2 * sizeof(uint32_t));
-            packet_seq = packet->data32[0] / (session->request_meta.mtu - (2 * sizeof(uint32_t)));
-        
-            if(session->hooks.on_data_packet) {
-                if (false == session->hooks.on_data_packet(session, packet)) {
-                   dbg_warn("on_data_packet() hook return false, (TBD: aborting)"); 
+    if(CSP_ERR_NONE != csp_bind(socket, 8)) {
+        dbg_warn("Could not bind to port 8");
+        return DTP_ERR;
+    }
+
+    uint32_t expected_nof_packets;
+    uint32_t round_time_ms;
+    uint32_t packets_per_round;
+    uint32_t resulting_throughput;
+    expected_nof_packets = calculate_expected_nof_packets(session);
+    compute_transmit_metrics(&session->request_meta, &round_time_ms, &packets_per_round, &resulting_throughput);
+    uint32_t total_transfer_dur_ms = (expected_nof_packets * round_time_ms) / packets_per_round;
+    dbg_log("Expected number of packets: %" PRIu32 " at %" PRIu32 " [bytes/s] for a duration of %" PRIu32 " [ms]\n", expected_nof_packets, resulting_throughput, total_transfer_dur_ms);
+    uint32_t nof_csp_packets = 0;
+    uint32_t expected_eot_ts_ms = csp_get_ms() + total_transfer_dur_ms + (round_time_ms * 2);
+
+    /* Enter the receiver loop until we have either received all packets or the duration has expired */
+    while (now_ts_ms < expected_eot_ts_ms || nof_csp_packets < expected_nof_packets)
+    {
+        if (!dtp_is_active(session)) {
+            dbg_log("DTP Operation cancelled.");
+            result = DTP_CANCELLED;
+            break;
+        }
+        /* Expect reception within at least 2 rounds of transmitting */
+        packet = csp_recvfrom(socket, round_time_ms * 10);
+        if (NULL == packet) {
+            idle_ms += (round_time_ms * 10);
+            dbg_warn("No data received for %" PRIu32 " [ms], last packet_seq=%" PRIu32 "", idle_ms, packet_seq);
+            continue;
+        }
+        idle_ms = 0;
+
+        now_ts_ms = csp_get_ms();
+
+        nof_csp_packets++;
+        session->bytes_received += packet->length - (2 * sizeof(uint32_t));
+        packet_seq = packet->data32[0] / (session->request_meta.mtu - (2 * sizeof(uint32_t)));
+
+        /* Calculate the current throughput */
+        uint32_t bytes_sent = nof_csp_packets * (session->request_meta.mtu - (2 * sizeof(uint32_t)));
+        uint32_t ts_diff = now_ts_ms - session->start_ts;
+        if (ts_diff > 0) {
+            uint32_t curr_throughput;
+            curr_throughput = bytes_sent / ts_diff;
+            if (curr_throughput > 0) {
+                uint32_t adj_eot_ts_ms;
+                adj_eot_ts_ms = ((session->request_meta.mtu - (2 * sizeof(uint32_t))) * expected_nof_packets) / curr_throughput;
+                int32_t adjust = adj_eot_ts_ms - expected_eot_ts_ms;
+                if (adjust) {
+                    expected_eot_ts_ms += adjust;
                 }
             }
-            csp_buffer_free(packet);
         }
-        if (idle_ms >= (session->timeout * 1000)) {
-            dbg_warn("No data received for %" PRIu32 " ms, bailing out", idle_ms);
+
+        if(session->hooks.on_data_packet) {
+            if (false == session->hooks.on_data_packet(session, packet)) {
+                dbg_warn("on_data_packet() hook return false, (TBD: aborting)"); 
+            }
         }
-        csp_socket_close(socket);
-        if(session->hooks.on_end) {
-            session->hooks.on_end(session);
-        }
-    } else {
-        result = DTP_ERR;
+        csp_buffer_free(packet);
     }
-    uint32_t duration = now - session->start_ts;
+
+    csp_socket_close(socket);
+    if(session->hooks.on_end) {
+        session->hooks.on_end(session);
+    }
+
+    uint32_t duration = now_ts_ms - session->start_ts;
     duration = duration?duration:1;
-    dbg_log("Received %" PRIu32 " bytes, last seq: %" PRIu32 ", status: %d", session->bytes_received, packet_seq, result);
-    dbg_log("Session duration: %" PRIu32 ".%" PRIu32 " s, avg throughput: %f KB/sec", (duration/1000),(duration - ((duration/1000)*1000)), (float)((session->bytes_received / duration) * 1000 ) / 1024.0);
+    dbg_log("Received %" PRIu32 " [bytes], last seq: %" PRIu32 ", status: %d", session->bytes_received, packet_seq, result);
+    dbg_log("Session duration: %" PRIu32 ".%" PRIu32 " [s], avg throughput: %f [KB/s]", (duration/1000),(duration - ((duration/1000)*1000)), (float)((session->bytes_received / duration) * 1000 ) / 1024.0);
+
     return result;
 }

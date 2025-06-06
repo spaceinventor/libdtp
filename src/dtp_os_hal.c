@@ -40,7 +40,7 @@ void os_hal_start_poll_operation(uint32_t poll_period_ms, uint32_t op, bool (*po
     TickType_t wakeupTime = xTaskGetTickCount();
     TickType_t ticks = pdMS_TO_TICKS(poll_period_ms);
 
-    printf("Poll: Start polling function at: %p every %"PRIu32" ms\n", poll, ticks);
+    printf("Poll: Start polling function at: %p every %"PRIu32" tick(s)\n", poll, ticks);
 
     while (carryon) {
         BaseType_t xWasDelayed = xTaskDelayUntil(&wakeupTime, ticks);

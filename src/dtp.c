@@ -28,10 +28,11 @@ static const char *const _error_strs[] = {
     "No error",
     "Invalid argument",
     "No more static sessions available",
-    "Not implemented", /* DTP_NOT_IMPLEMENTED */
+    "Given session not found",
     "Could not connect", /* DTP_CONNECTION_FAILED */
     "Could not allocate a mandatory piece of memory", /* DTP_MALLOC_FAILED */
-    "Given session not found"
+    "Not implemented", /* DTP_NOT_IMPLEMENTED */
+    "No more data available in current session", /* DTP_SESSION_EXHAUSTED */
 };
 
 static_assert(DTP_LAST_ERR <= sizeof(_error_strs) / sizeof(_error_strs[0]), "_error_strs does not have entries for all error codes");
@@ -119,10 +120,12 @@ dtp_t *dtp_acquire_session()
             static_sessions[i].in_use = true;
             dtp_t *session = &static_sessions[i].session;
             session->bytes_received = 0;
+            session->active = false;
             session->user_context = NULL;
             session->request_meta.nof_intervals = 1;
             session->request_meta.intervals[0].start = 0;
             session->request_meta.intervals[0].end = 0xffffffff; /* interval 0-0xFFFFFFFF means the whole thing */
+            session->request_meta.session_id = 0x00000000;
             dtp_params default_params = {
                 .hooks = default_session_hooks
             };
@@ -225,9 +228,41 @@ dtp_result dtp_get_opt(dtp_t *session, dtp_option option, dtp_params *param)
     return DTP_OK;
 }
 
-dtp_result dtp_stop_transfer(dtp_t *session)
+dtp_result dtp_stop_transfer(uint32_t session_id)
 {
+    
+    for (uint8_t i = 0; i < dtp_nof_static_sessions; i++)
+    {
+        if (static_sessions[i].in_use)
+        {
+            if (session_id == 0) {
+                /* Special case were all sessions must be stopped */
+                static_sessions[i].session.active = false;
+            } else if (session_id == static_sessions[i].session.request_meta.session_id) {
+                /* We found a match, stop the transfer */
+                static_sessions[i].session.active = false;
+            }
+        }
+    }
+
     return DTP_OK;
+}
+
+bool dtp_is_active(dtp_t *session)
+{
+    if (!session) {
+        /* Special case were we just want to detect any active sessions */
+        for (uint8_t i = 0; i < dtp_nof_static_sessions; i++)
+        {
+            if (static_sessions[i].in_use && static_sessions[i].session.active)
+            {
+                return true;
+            }
+        }
+        return false;
+    } else {
+        return session->active;
+    }
 }
 
 dtp_result dtp_serialize_session(dtp_t *session, void *ctx)
