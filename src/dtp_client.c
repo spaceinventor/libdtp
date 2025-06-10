@@ -243,6 +243,14 @@ dtp_result start_receiving_data(dtp_t *session)
             }
         }
         csp_buffer_free(packet);
+
+        /* In case we have received the last packet in a sequence, it does not make sense to sit
+         * around waiting for extra ones arriving. */
+        if (packet_seq >= (expected_nof_packets - 1)) {
+            dbg_log("Received last packet in transfer, bailing out.");
+            result = DTP_OK;
+            break;
+        }
     }
 
     csp_socket_close(socket);
