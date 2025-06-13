@@ -199,13 +199,15 @@ dtp_result start_receiving_data(dtp_t *session)
     uint32_t expected_eot_ts_ms = csp_get_ms() + total_transfer_dur_ms + (round_time_ms * 2);
 
     /* Enter the receiver loop until we have either received all packets or the duration has expired */
-    while (now_ts_ms < expected_eot_ts_ms || nof_csp_packets < expected_nof_packets)
+    while ((now_ts_ms + idle_ms) < expected_eot_ts_ms || nof_csp_packets < expected_nof_packets)
     {
+        /* Break the receiver loop if signalled by the user setting the transfer to inactive */
         if (!dtp_is_active(session)) {
             dbg_log("DTP Operation cancelled.");
             result = DTP_CANCELLED;
             break;
         }
+
         /* Expect reception within at least 2 rounds of transmitting */
         packet = csp_recvfrom(socket, round_time_ms * 10);
         if (NULL == packet) {
@@ -213,8 +215,9 @@ dtp_result start_receiving_data(dtp_t *session)
             dbg_warn("No data received for %" PRIu32 " [ms], last packet_seq=%" PRIu32 "", idle_ms, packet_seq);
             continue;
         }
-        idle_ms = 0;
 
+        /* Reset the idle time and fetch current time */
+        idle_ms = 0;
         now_ts_ms = csp_get_ms();
 
         nof_csp_packets++;
