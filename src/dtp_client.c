@@ -258,8 +258,6 @@ dtp_result start_receiving_data(dtp_t *session)
         }
     }
 
-    printf("now:%"PRIu32" end:%"PRIu32" packets:%"PRIu32" expected:%"PRIu32"\n", now_ts_ms, expected_eot_ts_ms, nof_csp_packets, expected_nof_packets);
-
     csp_socket_close(socket);
     if(session->hooks.on_end) {
         session->hooks.on_end(session);
