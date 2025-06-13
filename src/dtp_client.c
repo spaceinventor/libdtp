@@ -196,10 +196,12 @@ dtp_result start_receiving_data(dtp_t *session)
     uint32_t total_transfer_dur_ms = (expected_nof_packets * round_time_ms) / packets_per_round;
     dbg_log("Expected number of packets: %" PRIu32 " at %" PRIu32 " [bytes/s] for a duration of %" PRIu32 " [ms]\n", expected_nof_packets, resulting_throughput, total_transfer_dur_ms);
     uint32_t nof_csp_packets = 0;
-    uint32_t expected_eot_ts_ms = csp_get_ms() + total_transfer_dur_ms + (round_time_ms * 2);
+    now_ts_ms = csp_get_ms();
+    uint32_t expected_eot_ts_ms = now_ts_ms + total_transfer_dur_ms + (round_time_ms * 2);
+    uint32_t start_ts_ms = now_ts_ms;
 
     /* Enter the receiver loop until we have either received all packets or the duration has expired */
-    while ((now_ts_ms + idle_ms) < expected_eot_ts_ms || nof_csp_packets < expected_nof_packets)
+    while ((now_ts_ms + idle_ms) < expected_eot_ts_ms && nof_csp_packets < expected_nof_packets)
     {
         /* Break the receiver loop if signalled by the user setting the transfer to inactive */
         if (!dtp_is_active(session)) {
@@ -226,14 +228,14 @@ dtp_result start_receiving_data(dtp_t *session)
 
         /* Calculate the current throughput */
         uint32_t bytes_sent = nof_csp_packets * (session->request_meta.mtu - (2 * sizeof(uint32_t)));
-        uint32_t ts_diff = now_ts_ms - session->start_ts;
+        uint32_t ts_diff = now_ts_ms - start_ts_ms;
         if (ts_diff > 0) {
             uint32_t curr_throughput;
             curr_throughput = bytes_sent / ts_diff;
             if (curr_throughput > 0) {
                 uint32_t adj_eot_ts_ms;
                 adj_eot_ts_ms = ((session->request_meta.mtu - (2 * sizeof(uint32_t))) * expected_nof_packets) / curr_throughput;
-                int32_t adjust = adj_eot_ts_ms - expected_eot_ts_ms;
+                int32_t adjust = (start_ts_ms + adj_eot_ts_ms) - expected_eot_ts_ms;
                 if (adjust) {
                     expected_eot_ts_ms += adjust;
                 }
@@ -255,6 +257,8 @@ dtp_result start_receiving_data(dtp_t *session)
             break;
         }
     }
+
+    printf("now:%"PRIu32" end:%"PRIu32" packets:%"PRIu32" expected:%"PRIu32"\n", now_ts_ms, expected_eot_ts_ms, nof_csp_packets, expected_nof_packets);
 
     csp_socket_close(socket);
     if(session->hooks.on_end) {
