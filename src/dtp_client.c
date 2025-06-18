@@ -9,6 +9,18 @@
 #include "dtp/dtp_session.h"
 #include "dtp/dtp_log.h"
 
+static uint32_t last_packet_in_transfer(dtp_t *session) {
+    uint32_t last_packet = 0;
+
+    last_packet = session->request_meta.intervals[session->request_meta.nof_intervals - 1].end;
+    if (last_packet == UINT32_MAX) {
+        /* This means the whole shebang */
+        last_packet = session->payload_size / (session->request_meta.mtu - (2 * sizeof(uint32_t)));
+    }
+
+    return last_packet;
+}
+
 static uint32_t calculate_expected_nof_packets(dtp_t *session) {
     uint32_t expected_nof_packets = 0;
 
@@ -188,10 +200,12 @@ dtp_result start_receiving_data(dtp_t *session)
     }
 
     uint32_t expected_nof_packets;
+    uint32_t last_packet;
     uint32_t round_time_ms;
     uint32_t packets_per_round;
     uint32_t resulting_throughput;
     expected_nof_packets = calculate_expected_nof_packets(session);
+    last_packet = last_packet_in_transfer(session);
     compute_transmit_metrics(&session->request_meta, &round_time_ms, &packets_per_round, &resulting_throughput);
     uint32_t total_transfer_dur_ms = (expected_nof_packets * round_time_ms) / packets_per_round;
     dbg_log("Expected number of packets: %" PRIu32 " at %" PRIu32 " [bytes/s] for a duration of %" PRIu32 " [ms]\n", expected_nof_packets, resulting_throughput, total_transfer_dur_ms);
@@ -251,8 +265,8 @@ dtp_result start_receiving_data(dtp_t *session)
 
         /* In case we have received the last packet in a sequence, it does not make sense to sit
          * around waiting for extra ones arriving. */
-        if (packet_seq >= (expected_nof_packets - 1)) {
-            dbg_log("Received last packet in transfer, bailing out.");
+        if (packet_seq >= last_packet) {
+            dbg_log("Received last packet (%"PRIu32") in transfer, bailing out.", last_packet);
             result = DTP_OK;
             break;
         }
