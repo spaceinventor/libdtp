@@ -208,6 +208,12 @@ dtp_result start_receiving_data(dtp_t *session)
     last_packet = last_packet_in_transfer(session);
     compute_transmit_metrics(&session->request_meta, &round_time_ms, &packets_per_round, &resulting_throughput);
     uint32_t total_transfer_dur_ms = (expected_nof_packets * round_time_ms) / packets_per_round;
+
+    /* Truncate the transfer duration */
+    if (total_transfer_dur_ms < 1000) {
+        total_transfer_dur_ms = 1000;
+    }
+    
     dbg_log("Expected number of packets: %" PRIu32 " at %" PRIu32 " [bytes/s] for a duration of %" PRIu32 " [ms]\n", expected_nof_packets, resulting_throughput, total_transfer_dur_ms);
     uint32_t nof_csp_packets = 0;
     now_ts_ms = csp_get_ms();
