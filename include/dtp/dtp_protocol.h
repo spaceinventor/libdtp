@@ -51,6 +51,16 @@ extern "C"
         uint32_t total_payload_size; /** Total size of payload, for info (will be >= size_in_bytes) */
     } dtp_meta_resp_t;
 
+    typedef struct
+    {
+        uint32_t round_time_ms; /** The tick time for each transmit round [ms] */
+        uint32_t packets_per_round; /** Number of packets being transmitted each round */
+        uint32_t resulting_throughput; /** The actual throughput (on average) from the round time and packets per round [Bytes/s] */
+        uint32_t nof_packets; /** The total number of packets for this session */
+        uint32_t last_packet; /** The highest packet number occurring in this transmission */
+        uint32_t total_duration_ms; /** The expected total duration of this session [ms] */
+    }  dtp_metrics_t;
+    
     extern dtp_server_transfer_ctx_t server_transfer_ctx;
 
     extern csp_packet_t *setup_server_transfer(dtp_server_transfer_ctx_t *ctx, uint16_t dst, csp_packet_t *request);
@@ -68,7 +78,7 @@ extern "C"
      */
     extern uint32_t compute_nof_packets(uint32_t total, uint32_t effective_payload_size);
 
-    extern void compute_transmit_metrics(dtp_meta_req_t *request, uint32_t *round_time_ms, uint32_t *packets_per_round, uint32_t *resulting_throughput);
+    extern void compute_dtp_metrics(dtp_meta_req_t *request, uint32_t payload_size, dtp_metrics_t *metric);
 #ifdef __cplusplus
 }
 #endif

@@ -9,36 +9,6 @@
 #include "dtp/dtp_session.h"
 #include "dtp/dtp_log.h"
 
-static uint32_t last_packet_in_transfer(dtp_t *session) {
-    uint32_t last_packet = 0;
-
-    last_packet = session->request_meta.intervals[session->request_meta.nof_intervals - 1].end;
-    if (last_packet == UINT32_MAX) {
-        /* This means the whole shebang */
-        last_packet = session->payload_size / (session->request_meta.mtu - (2 * sizeof(uint32_t)));
-    }
-
-    return last_packet;
-}
-
-static uint32_t calculate_expected_nof_packets(dtp_t *session) {
-    uint32_t expected_nof_packets = 0;
-
-    /* Calculate the number of packets from the meta data send to the send */
-    for (uint8_t i = 0; i < session->request_meta.nof_intervals; i++) {
-        interval_t *cur_int = &session->request_meta.intervals[i];
-        uint32_t end = cur_int->end;
-        if (end == UINT32_MAX) {
-            /* This means the whole shebang */
-            end = session->payload_size / (session->request_meta.mtu - (2 * sizeof(uint32_t)));
-        }
-        uint32_t interval_size = (end - cur_int->start) + 1;
-        expected_nof_packets += interval_size;
-    }
-
-    return expected_nof_packets;
-}
-
 dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, char *filename, uint16_t mtu, bool resume) {
     dtp_t *session = NULL;
     dtp_result res = DTP_OK;
@@ -199,29 +169,16 @@ dtp_result start_receiving_data(dtp_t *session)
         return DTP_ERR;
     }
 
-    uint32_t expected_nof_packets;
-    uint32_t last_packet;
-    uint32_t round_time_ms;
-    uint32_t packets_per_round;
-    uint32_t resulting_throughput;
-    expected_nof_packets = calculate_expected_nof_packets(session);
-    last_packet = last_packet_in_transfer(session);
-    compute_transmit_metrics(&session->request_meta, &round_time_ms, &packets_per_round, &resulting_throughput);
-    uint32_t total_transfer_dur_ms = (expected_nof_packets * round_time_ms) / packets_per_round;
-
-    /* Truncate the transfer duration */
-    if (total_transfer_dur_ms < 1000) {
-        total_transfer_dur_ms = 1000;
-    }
+    dtp_metrics_t metric;
+    compute_dtp_metrics(&session->request_meta, session->payload_size, &metric);
     
-    dbg_log("Expected number of packets: %" PRIu32 " at %" PRIu32 " [bytes/s] for a duration of %" PRIu32 " [ms]\n", expected_nof_packets, resulting_throughput, total_transfer_dur_ms);
-    uint32_t nof_csp_packets = 0;
+    uint32_t nof_packets = 0;
     now_ts_ms = csp_get_ms();
-    uint32_t expected_eot_ts_ms = now_ts_ms + total_transfer_dur_ms + (round_time_ms * 2);
+    uint32_t expected_eot_ts_ms = now_ts_ms + metric.total_duration_ms + (metric.round_time_ms * 2);
     uint32_t start_ts_ms = now_ts_ms;
 
     /* Enter the receiver loop until we have either received all packets or the duration has expired */
-    while ((now_ts_ms + idle_ms) < expected_eot_ts_ms && nof_csp_packets < expected_nof_packets)
+    while ((now_ts_ms + idle_ms) < expected_eot_ts_ms && nof_packets < metric.nof_packets)
     {
         /* Break the receiver loop if signalled by the user setting the transfer to inactive */
         if (!dtp_is_active(session)) {
@@ -231,9 +188,9 @@ dtp_result start_receiving_data(dtp_t *session)
         }
 
         /* Expect reception within at least 2 rounds of transmitting */
-        packet = csp_recvfrom(socket, round_time_ms * 10);
+        packet = csp_recvfrom(socket, metric.round_time_ms * 10);
         if (NULL == packet) {
-            idle_ms += (round_time_ms * 10);
+            idle_ms += (metric.round_time_ms * 10);
             dbg_warn("No data received for %" PRIu32 " [ms], last packet_seq=%" PRIu32 "", idle_ms, packet_seq);
             continue;
         }
@@ -242,19 +199,19 @@ dtp_result start_receiving_data(dtp_t *session)
         idle_ms = 0;
         now_ts_ms = csp_get_ms();
 
-        nof_csp_packets++;
+        nof_packets++;
         session->bytes_received += packet->length - (2 * sizeof(uint32_t));
         packet_seq = packet->data32[0] / (session->request_meta.mtu - (2 * sizeof(uint32_t)));
 
         /* Calculate the current throughput */
-        uint32_t bytes_sent = nof_csp_packets * (session->request_meta.mtu - (2 * sizeof(uint32_t)));
+        uint32_t bytes_sent = nof_packets * (session->request_meta.mtu - (2 * sizeof(uint32_t)));
         uint32_t ts_diff = now_ts_ms - start_ts_ms;
         if (ts_diff > 0) {
             uint32_t curr_throughput;
             curr_throughput = bytes_sent / ts_diff;
             if (curr_throughput > 0) {
                 uint32_t adj_eot_ts_ms;
-                adj_eot_ts_ms = ((session->request_meta.mtu - (2 * sizeof(uint32_t))) * expected_nof_packets) / curr_throughput;
+                adj_eot_ts_ms = ((session->request_meta.mtu - (2 * sizeof(uint32_t))) * metric.nof_packets) / curr_throughput;
                 int32_t adjust = (start_ts_ms + adj_eot_ts_ms) - expected_eot_ts_ms;
                 if (adjust) {
                     expected_eot_ts_ms += adjust;
@@ -271,8 +228,8 @@ dtp_result start_receiving_data(dtp_t *session)
 
         /* In case we have received the last packet in a sequence, it does not make sense to sit
          * around waiting for extra ones arriving. */
-        if (packet_seq >= last_packet) {
-            dbg_log("Received last packet (%"PRIu32") in transfer, bailing out.", last_packet);
+        if (packet_seq >= metric.last_packet) {
+            dbg_log("Received last packet (%"PRIu32") in transfer, bailing out.", metric.last_packet);
             result = DTP_OK;
             break;
         }

@@ -53,23 +53,23 @@ uint32_t compute_nof_packets(uint32_t total, uint32_t effective_payload_size) {
     return expected_nof_packets;
 }
 
-void compute_transmit_metrics(dtp_meta_req_t *request, uint32_t *round_time_ms, uint32_t *packets_per_round, uint32_t *resulting_throughput) {
-
+void compute_dtp_metrics(dtp_meta_req_t *request, uint32_t payload_size, dtp_metrics_t *metric) {
     uint32_t mtu = request->mtu - (2 * sizeof(uint32_t)); // MTU minus the two 32-bit words for the sequence number and session ID
     uint32_t throughput = request->throughput;
     uint32_t packets_sec = throughput / mtu;
     uint32_t secs_packet = mtu / throughput;
+
     dbg_log("Throughput: %"PRIu32" [bytes/s] using MTU: %"PRIu16" [bytes]", throughput, mtu);
     dbg_log("Packets/second: %" PRIu32, packets_sec);
     dbg_log("Seconds/packet: %" PRIu32, secs_packet);
     
     /* Calculate the round time and the packets per round */
     if (secs_packet > packets_sec) {
-        (*round_time_ms) = secs_packet * 1000;
-        (*packets_per_round) = 1;
+        metric->round_time_ms = secs_packet * 1000;
+        metric->packets_per_round = 1;
     } else {
-        (*round_time_ms) = 1000;
-        (*packets_per_round) = packets_sec;
+        metric->round_time_ms = 1000;
+        metric->packets_per_round = packets_sec;
     }
     
     /* Can we optimize the round time */
@@ -77,9 +77,9 @@ void compute_transmit_metrics(dtp_meta_req_t *request, uint32_t *round_time_ms, 
     float error;
     do {
         factor *= 10.0;
-        uint32_t __throughput = (((*packets_per_round) / factor) * mtu) / ((*round_time_ms) / factor) * 1000UL;
+        uint32_t __throughput = ((metric->packets_per_round / factor) * mtu) / (metric->round_time_ms / factor) * 1000UL;
         error = fabs(((float)throughput - (float)__throughput)/(float)throughput)*100.0;
-        if ((*round_time_ms) / factor < 10) {
+        if (metric->round_time_ms / factor < 10) {
             dbg_log("Round time too short (<10ms)\n");
             break;
         }
@@ -87,12 +87,39 @@ void compute_transmit_metrics(dtp_meta_req_t *request, uint32_t *round_time_ms, 
     
     /* Roll back one factor of 10 */
     factor = factor / 10;
-    (*round_time_ms) /= factor;
-    (*packets_per_round) /= factor;
-    float bytes_per_ms = ((float)(*packets_per_round) * mtu) / (float)(*round_time_ms);
-    (*resulting_throughput) = (uint32_t)(bytes_per_ms * 1000.0);
+    metric->round_time_ms /= factor;
+    metric->packets_per_round /= factor;
+    float bytes_per_ms = ((float)metric->packets_per_round * mtu) / (float)metric->round_time_ms;
+    metric->resulting_throughput = (uint32_t)(bytes_per_ms * 1000.0);
 
-    dbg_log("Round time: %" PRIu32 " [ms]", *round_time_ms);
-    dbg_log("Packets per round: %" PRIu32, *packets_per_round);
+    /* Calculate the number of packets from the meta data send to the send */
+    metric->nof_packets = 0;
+    for (uint8_t i = 0; i < request->nof_intervals; i++) {
+        interval_t *cur_int = &request->intervals[i];
+        uint32_t end = cur_int->end;
+        if (end == UINT32_MAX) {
+            /* This means the whole shebang */
+            end = payload_size / mtu;
+        }
+        uint32_t interval_size = (end - cur_int->start) + 1;
+        metric->nof_packets += interval_size;
+    }
+
+    metric->total_duration_ms = (metric->nof_packets * metric->round_time_ms) / metric->packets_per_round;
+
+    /* Truncate the transfer duration */
+    if (metric->total_duration_ms < 1000) {
+        metric->total_duration_ms = 1000;
+    }
+
+    metric->last_packet = request->intervals[request->nof_intervals - 1].end;
+    if (metric->last_packet == UINT32_MAX) {
+        /* This means the whole shebang */
+        metric->last_packet = payload_size / mtu;
+    }
+
+    dbg_log("Round time: %" PRIu32 " [ms]", metric->round_time_ms);
+    dbg_log("Packets per round: %" PRIu32, metric->packets_per_round);
     dbg_log("Resulting throughput: %f [bytes/s]", bytes_per_ms * 1000.0);
+    dbg_log("Expected number of packets: %" PRIu32 " at %" PRIu32 " [bytes/s] for a duration of %" PRIu32 " [ms]\n", metric->nof_packets, metric->resulting_throughput, metric->total_duration_ms);
 }

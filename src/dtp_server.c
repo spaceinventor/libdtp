@@ -201,10 +201,8 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
     transfer.ctx = ctx;
     transfer.bytes_sent = 0;
     transfer.nof_csp_packets = 0;
-    uint32_t round_time_ms = 0;
-    __attribute__((unused)) uint32_t resulting_throughput = 0;
-
-    compute_transmit_metrics(&ctx->request, &round_time_ms, &transfer.nof_packets_per_round, &resulting_throughput);
+    dtp_metrics_t metric;
+    compute_dtp_metrics(&ctx->request, ctx->payload_meta.size, &metric);
 
     dbg_log("Number of intervals: %u", ctx->request.nof_intervals);
     for(uint8_t i = 0; i < ctx->request.nof_intervals && *(ctx->keep_running); i++)
@@ -234,10 +232,10 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
         dbg_log("interval_stop: %u (seq: %u)", interval_stop, ctx->request.intervals[i].end);
         dbg_log("bytes_in_interval: %u", transfer.bytes_in_interval);
 
-        dbg_log("Sending %d packets every %d ms\n", transfer.nof_packets_per_round, round_time_ms);
+        dbg_log("Sending %d packets every %d ms\n", transfer.nof_packets_per_round, metric.round_time_ms);
 
         /* Trigger a poll'ing operation for this interval */
-        os_hal_start_poll_operation(round_time_ms, 0, dtp_server_poll_loop, &transfer);
+        os_hal_start_poll_operation(metric.round_time_ms, 0, dtp_server_poll_loop, &transfer);
 
         dbg_log("sent_in_interval: %u", transfer.sent_in_interval);
     }
