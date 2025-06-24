@@ -197,12 +197,14 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
 {
     dtp_result result = DTP_OK;
     dtp_server_transfer_t transfer;
+    dtp_metrics_t metric;
+
+    compute_dtp_metrics(&ctx->request, ctx->payload_meta.size, &metric);
 
     transfer.ctx = ctx;
     transfer.bytes_sent = 0;
     transfer.nof_csp_packets = 0;
-    dtp_metrics_t metric;
-    compute_dtp_metrics(&ctx->request, ctx->payload_meta.size, &metric);
+    transfer.nof_packets_per_round = metric.packets_per_round;
 
     dbg_log("Number of intervals: %u", ctx->request.nof_intervals);
     for(uint8_t i = 0; i < ctx->request.nof_intervals && *(ctx->keep_running); i++)
