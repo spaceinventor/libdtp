@@ -13,7 +13,6 @@
 #include "vmem/vmem_server.h"
 
 typedef struct dtp_vmem_context_s {
-    bool carryon;
     uint32_t session_id;
     message_queue_t queue;
     uint8_t queue_storage[10 * sizeof(dtp_msg_t)];
@@ -77,7 +76,7 @@ static int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet, void
 
             /* Stop the transfer */
             printf("Stopping the DTP transfer...\n");
-            vmem_context->carryon = false;
+            server_transfer_ctx.keep_running = false;
             vmem_context->session_id = 0;
         }
         break;
@@ -91,7 +90,7 @@ static int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet, void
                 dtp_status_resp_t *response = (dtp_status_resp_t *)&buffer->data[0];
                 buffer->length = sizeof(dtp_status_resp_t);
                 response->session_id = htobe32(vmem_context->session_id);
-                if (vmem_context->carryon) {
+                if (server_transfer_ctx.keep_running) {
                     response->status = htobe32(DTP_TRANSFER_STATUS_BUSY);
                 } else {
                     response->status = htobe32(DTP_TRANSFER_STATUS_OK);
@@ -139,6 +138,6 @@ void dtp_vmem_server_task(void * param) {
     vmem_server_bind_type(0x80 /* VMEM_SERVER_DTP_REQUEST */, vmem_dtp_request_handler, &dtp_vmem_context.vmem_handler, &dtp_vmem_context);
 
     /* Start the DTP VMEM server main task - it will newer return */
-    dtp_vmem_server_main(&dtp_vmem_context.carryon, &dtp_api);
+    dtp_vmem_server_main(&dtp_api);
 
 }
