@@ -9,7 +9,7 @@
 #include "dtp/dtp_session.h"
 #include "dtp/dtp_log.h"
 
-dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, char *filename, uint16_t mtu, bool resume) {
+dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, void *ctx, uint16_t mtu, bool resume) {
     dtp_t *session = NULL;
     dtp_result res = DTP_OK;
 
@@ -24,11 +24,11 @@ dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_th
         dbg_log("Session created: %p", session);
     }
 
-    dtp_session_set_user_ctx(session, strdup(filename));
+    dtp_session_set_user_ctx(session, ctx);
 
     if (resume) {
         /* Deserializing a session will override parameters */
-        res = dtp_deserialize_session(session, 0);
+        res = dtp_deserialize_session(session, ctx);
         if (DTP_OK != res) {
             dbg_warn("Deserialization failed: %s", dtp_strerror(dtp_errno(session)));
             goto get_out_please;
@@ -94,12 +94,12 @@ int dtp_vmem_client_main(dtp_t *session) {
     return res;
 }
 
-int dtp_client_main(uint32_t server, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, uint16_t mtu, bool resume, dtp_t **out_session) {
+int dtp_client_main(uint32_t server, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, uint16_t mtu, bool resume, dtp_t **out_session, void *ctx) {
     dtp_t *session = NULL;
     dtp_result res = DTP_OK;
 
     /* Prepare it with the parameters from the caller */
-    session = dtp_prepare_session(server, 0x900dface, max_throughput, timeout, payload_id, NULL, mtu, resume);
+    session = dtp_prepare_session(server, 0x900dface, max_throughput, timeout, payload_id, ctx, mtu, resume);
     if (session == NULL) {
         dbg_warn("%s", dtp_strerror(dtp_errno(session)));
         res = DTP_ERR;
@@ -110,7 +110,7 @@ int dtp_client_main(uint32_t server, uint32_t max_throughput, uint8_t timeout, u
     res = dtp_start_transfer(session);
 
 get_out_please:
-    if (DTP_OK == res && 0 != out_session) {
+    if ((DTP_OK == res || DTP_CANCELLED ) && 0 != out_session) {
         /* Give session responsibility to caller, they wants it */
         *out_session = session;
     } else {

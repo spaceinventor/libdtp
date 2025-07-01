@@ -189,7 +189,7 @@ extern "C"
      */
     dtp_t *dtp_acquire_session();
 
-    dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, char *filename, uint16_t mtu, bool resume);
+    dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, void *ctx, uint16_t mtu, bool resume);
 
     /**
      * Release a previously acquired handle on one of the pre-allocated sessions
@@ -300,10 +300,10 @@ extern "C"
 /*
 #pragma region Simplified Public API
  */
-    extern int dtp_vmem_server_main(bool *keep_running, dtp_async_api_t *api);
+    extern int dtp_vmem_server_main(dtp_async_api_t *api);
     extern int dtp_vmem_client_main(dtp_t *session);
-    extern int dtp_server_main(bool *keep_running);
-    extern int dtp_client_main(uint32_t server, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, uint16_t mtu, bool resume, dtp_t **session);
+    extern int dtp_server_main(bool *exit_server);
+    extern int dtp_client_main(uint32_t server, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, uint16_t mtu, bool resume, dtp_t **session, void *ctx);
 
 /*
 #pragma endregion
