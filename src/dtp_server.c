@@ -7,7 +7,7 @@
 #include "dtp/dtp_os_hal.h"
 #include "dtp/dtp_async_api.h"
 
-static void dtp_server_run(bool *keep_running)
+static void dtp_server_run(bool *exit_server)
 {
     static csp_socket_t sock = {0};
     sock.opts = CSP_O_RDP;
@@ -18,7 +18,7 @@ static void dtp_server_run(bool *keep_running)
 
     /* Wait for connections and then process packets on the connection */
     dbg_log("Waiting for connection...");
-    while (*keep_running)
+    while (!(*exit_server))
     {
         /* Wait for a new connection, 10000 mS timeout */
         csp_conn_t *conn;
@@ -35,11 +35,12 @@ static void dtp_server_run(bool *keep_running)
         }
         dbg_log("Got meta data request");
         packet = setup_server_transfer(&server_transfer_ctx, csp_conn_src(conn), packet);
-        server_transfer_ctx.keep_running = keep_running;
+        server_transfer_ctx.keep_running = true;
         if(packet) {
             csp_send(conn, packet);
             start_sending_data(&server_transfer_ctx);
         }
+        server_transfer_ctx.keep_running = false;
         csp_close(conn);
         dbg_log("Transfer done");
     }
@@ -76,7 +77,7 @@ static uint32_t dtp_payload_vmem_read(uint8_t payload_id, uint32_t offset, void 
     return size;
 } 
 
-static void dtp_vmem_server_run(bool *keep_running, dtp_async_api_t *api)
+static void dtp_vmem_server_run(dtp_async_api_t *api)
 {
 
     dtp_server_transfer_ctx_t server_transfer_ctx;
@@ -101,8 +102,6 @@ static void dtp_vmem_server_run(bool *keep_running, dtp_async_api_t *api)
                 server_transfer_ctx.payload_meta.size = msg.size;
                 server_transfer_ctx.payload_meta.base = msg.vaddr;
 
-                *keep_running = true;
-
                 printf("address: 0x%016"PRIX64"\n", msg.vaddr);
                 printf("size: %"PRIu32"\n", msg.size);
                 server_transfer_ctx.size_in_bytes = compute_transfer_size(&server_transfer_ctx);
@@ -112,13 +111,13 @@ static void dtp_vmem_server_run(bool *keep_running, dtp_async_api_t *api)
                 server_transfer_ctx.payload_meta.read = dtp_payload_vmem_read;
                 server_transfer_ctx.payload_meta.completed = NULL;
                 server_transfer_ctx.destination = msg.node;
-                server_transfer_ctx.keep_running = keep_running;
+                server_transfer_ctx.keep_running = true;
                 /* Start the actual transmission of data. This will block until done.
                 It can be stopped by setting the 'keep_running' flag on the object
                 passed on to the process. */
                 start_sending_data(&server_transfer_ctx);
                 /* Reset the keep_running flag to indicate transfer is done */
-                *keep_running = false;
+                server_transfer_ctx.keep_running = false;
                 dbg_log("Transfer done");
             }
             break;
@@ -128,7 +127,6 @@ static void dtp_vmem_server_run(bool *keep_running, dtp_async_api_t *api)
 }
 
 typedef struct dtp_server_transfer_s {
-    bool keep_running;
     uint32_t bytes_sent;
     uint32_t sent_in_interval;
     uint32_t bytes_in_interval;
@@ -142,9 +140,8 @@ static bool dtp_server_poll_loop(uint32_t op, void *context) {
     bool carryon = true;
     csp_packet_t *packet;
     dtp_server_transfer_t * transfer = (dtp_server_transfer_t *)context;
-
     uint32_t pkt_cnt = 0;
-    while (transfer->nof_packets_per_round > pkt_cnt) {
+    while (transfer->nof_packets_per_round > pkt_cnt && transfer->ctx->keep_running) {
 
         uint32_t data_read;
 
@@ -187,7 +184,7 @@ static bool dtp_server_poll_loop(uint32_t op, void *context) {
     }
 
     /* Decide if we need to keep carrying on with poll'ing */
-    carryon = (transfer->sent_in_interval < transfer->bytes_in_interval) && *(transfer->ctx->keep_running);
+    carryon = (transfer->sent_in_interval < transfer->bytes_in_interval) && transfer->ctx->keep_running;
 
     return carryon;
 
@@ -207,7 +204,7 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
     transfer.nof_packets_per_round = metric.packets_per_round;
 
     dbg_log("Number of intervals: %u", ctx->request.nof_intervals);
-    for(uint8_t i = 0; i < ctx->request.nof_intervals && *(ctx->keep_running); i++)
+    for(uint8_t i = 0; i < ctx->request.nof_intervals && ctx->keep_running; i++)
     {
         uint32_t interval_start = ctx->request.intervals[i].start * (ctx->request.mtu - (2 * sizeof(uint32_t)));
         uint32_t interval_stop;
@@ -241,7 +238,7 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
 
         dbg_log("sent_in_interval: %u", transfer.sent_in_interval);
     }
-    if(!*(ctx->keep_running)) {
+    if(!ctx->keep_running) {
         dbg_warn("Transfer was interrupted");
     }
     dbg_warn("nof_csp_packets= %lu", transfer.nof_csp_packets);
@@ -280,14 +277,14 @@ csp_packet_t *setup_server_transfer(dtp_server_transfer_ctx_t *ctx, uint16_t dst
     return result;
 }
 
-int dtp_server_main(bool *keep_running)
+int dtp_server_main(bool *exit_server)
 {
-    dtp_server_run(keep_running);
+    dtp_server_run(exit_server);
     return 0;
 }
 
-int dtp_vmem_server_main(bool *keep_running, dtp_async_api_t *api)
+int dtp_vmem_server_main(dtp_async_api_t *api)
 {
-    dtp_vmem_server_run(keep_running, api);
+    dtp_vmem_server_run(api);
     return 0;
 }
