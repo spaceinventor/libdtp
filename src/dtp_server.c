@@ -80,8 +80,6 @@ static uint32_t dtp_payload_vmem_read(uint8_t payload_id, uint32_t offset, void 
 static void dtp_vmem_server_run(dtp_async_api_t *api)
 {
 
-    dtp_server_transfer_ctx_t server_transfer_ctx;
-
     dbg_log("Starting DTP VMEM Server task.\n");
 
     /* Wait for connections and then process packets on the connection */
@@ -181,6 +179,10 @@ static bool dtp_server_poll_loop(uint32_t op, void *context) {
         csp_sendto(CSP_PRIO_NORM, transfer->ctx->destination, 8 /* DTP DATA PORT */, 0, 0, packet);
         transfer->nof_csp_packets++;
         pkt_cnt++;
+        if ((csp_get_ms() - transfer->ctx->client_alive_ts) > (transfer->ctx->request.keep_alive_interval * 2) + 500 ) {
+            dbg_warn("Client no longer alive, aborting...\n");
+            transfer->ctx->keep_running = false;
+        }
     }
 
     /* Decide if we need to keep carrying on with poll'ing */
@@ -202,7 +204,7 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
     transfer.bytes_sent = 0;
     transfer.nof_csp_packets = 0;
     transfer.nof_packets_per_round = metric.packets_per_round;
-
+    ctx->client_alive_ts = csp_get_ms();
     dbg_log("Number of intervals: %u", ctx->request.nof_intervals);
     for(uint8_t i = 0; i < ctx->request.nof_intervals && ctx->keep_running; i++)
     {
@@ -256,6 +258,7 @@ csp_packet_t *setup_server_transfer(dtp_server_transfer_ctx_t *ctx, uint16_t dst
     csp_packet_t *result = 0;
 
     memcpy(&(ctx->request), (dtp_meta_req_t *)request->data, sizeof(dtp_meta_req_t));
+    ctx->request.keep_alive_interval = be32toh(ctx->request.keep_alive_interval);
     ctx->destination = dst;
 
     /* Get the payload information */

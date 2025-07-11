@@ -77,6 +77,7 @@ dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_th
             goto get_out_please;
         }
     }
+    session->request_meta.keep_alive_interval = htobe32(session->timeout * 1000);
 
     return session;
 
@@ -176,6 +177,7 @@ dtp_result start_receiving_data(dtp_t *session)
     now_ts_ms = csp_get_ms();
     uint32_t expected_eot_ts_ms = now_ts_ms + metric.total_duration_ms + (metric.round_time_ms * 2);
     uint32_t start_ts_ms = now_ts_ms;
+    uint32_t last_alive = now_ts_ms;
 
     /* Enter the receiver loop until we have either received all packets or the duration has expired */
     while ((now_ts_ms + idle_ms) < expected_eot_ts_ms && nof_packets < metric.nof_packets)
@@ -217,6 +219,12 @@ dtp_result start_receiving_data(dtp_t *session)
                     expected_eot_ts_ms += adjust;
                 }
             }
+        }
+        if((now_ts_ms - last_alive) >= (session->timeout * 1000)) {
+            dbg_log("Sending ALIVE...\n");
+            extern int vmem_request_dtp_send_alive(int node);
+            vmem_request_dtp_send_alive(session->remote_cfg.node);
+            last_alive = now_ts_ms;
         }
 
         if(session->hooks.on_data_packet) {

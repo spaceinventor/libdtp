@@ -2,15 +2,16 @@
 #include <stdint.h>
 #include <inttypes.h>
 
-#include "csp/csp.h"
+#include <csp/csp.h>
+#include <csp/arch/csp_time.h>
 
-#include "dtp/dtp_async_api.h"
-#include "dtp/dtp_vmem_server.h"
+#include <dtp/dtp_async_api.h>
+#include <dtp/dtp_vmem_server.h>
+#include <dtp/dtp_protocol.h>
+#include <ossi/message_queue.h>
 
-#include "ossi/message_queue.h"
-
-#include "vmem/vmem.h"
-#include "vmem/vmem_server.h"
+#include <vmem/vmem.h>
+#include <vmem/vmem_server.h>
 
 typedef struct dtp_vmem_context_s {
     uint32_t session_id;
@@ -44,6 +45,7 @@ static int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet, void
             msg.meta.session_id = be32toh(request->meta.session_id);
             msg.meta.payload_id = request->meta.payload_id;
             msg.meta.nof_intervals = request->meta.nof_intervals;
+            msg.meta.keep_alive_interval = be32toh(request->meta.keep_alive_interval);
             printf("\tStart address: 0x%016"PRIX64"\n", be64toh(request->vaddr));
             printf("\tSize: %"PRIu32"\n", be32toh(request->size));
             printf("\tChunk size: %"PRIu32"\n", chunk_size);
@@ -63,7 +65,7 @@ static int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet, void
             msg.size = be32toh(request->size);
 
             vmem_context->session_id = be32toh(request->meta.session_id);
-
+            server_transfer_ctx.client_alive_ts = csp_get_ms();
             message_queue_send(&vmem_context->queue, &msg);
         }
         break;
@@ -97,6 +99,14 @@ static int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet, void
                 }
                 /* Send the response back on the connection */
                 csp_send(conn, buffer);
+            }
+        }
+        break;
+        case DTP_REQUEST_TRANSFER_ALIVE:
+        {
+            if(server_transfer_ctx.keep_running) {
+                server_transfer_ctx.client_alive_ts = csp_get_ms();
+                printf("Received DTP ALIVE from client\n");
             }
         }
         break;
