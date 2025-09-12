@@ -1,3 +1,4 @@
+#include <endian.h>
 #include <stdlib.h>
 #include "dtp/dtp_log.h"
 #include "dtp/dtp.h"

@@ -1,3 +1,4 @@
+#include <endian.h>
 #include <csp/csp.h>
 #include <csp/arch/csp_time.h>
 #include "dtp/dtp.h"
