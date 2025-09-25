@@ -10,7 +10,7 @@
 #include "dtp/dtp_session.h"
 #include "dtp/dtp_log.h"
 
-dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, void *ctx, uint16_t mtu, bool resume) {
+dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, void *ctx, uint16_t mtu, bool resume, uint32_t keep_alive_interval) {
     dtp_t *session = NULL;
     dtp_result res = DTP_OK;
 
@@ -78,7 +78,7 @@ dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_th
             goto get_out_please;
         }
     }
-    session->request_meta.keep_alive_interval = htobe32(session->timeout * 1000);
+    session->request_meta.keep_alive_interval = keep_alive_interval;
 
     return session;
 
@@ -96,12 +96,12 @@ int dtp_vmem_client_main(dtp_t *session) {
     return res;
 }
 
-int dtp_client_main(uint32_t server, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, uint16_t mtu, bool resume, dtp_t **out_session, void *ctx) {
+int dtp_client_main(uint32_t server, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, uint16_t mtu, bool resume, dtp_t **out_session, void *ctx, uint32_t keep_alive_interval) {
     dtp_t *session = NULL;
     dtp_result res = DTP_OK;
 
     /* Prepare it with the parameters from the caller */
-    session = dtp_prepare_session(server, 0x900dface, max_throughput, timeout, payload_id, ctx, mtu, resume);
+    session = dtp_prepare_session(server, 0x900dface, max_throughput, timeout, payload_id, ctx, mtu, resume, keep_alive_interval);
     if (session == NULL) {
         dbg_warn("%s", dtp_strerror(dtp_errno(session)));
         res = DTP_ERR;
@@ -221,7 +221,7 @@ dtp_result start_receiving_data(dtp_t *session)
                 }
             }
         }
-        if((now_ts_ms - last_alive) >= (session->timeout * 1000)) {
+        if(session->request_meta.keep_alive_interval > 0 && (now_ts_ms - last_alive) >= (session->request_meta.keep_alive_interval)) {
             dbg_log("Sending ALIVE...\n");
             extern int vmem_request_dtp_send_alive(int node);
             vmem_request_dtp_send_alive(session->remote_cfg.node);

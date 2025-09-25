@@ -42,7 +42,7 @@ int vmem_request_dtp_start_download(dtp_t *session, int node, uint32_t session_i
     request->meta.throughput = htobe32(session->request_meta.throughput); /* Throughput in bytes/second */
     request->meta.mtu = htobe16(session->request_meta.mtu); /* MTU size (size of the *useful* payload DTP will use to split the payload) in BYTES */
     request->meta.session_id = htobe32(session_id); /* The session ID, representing this particular transfer */
-    request->meta.keep_alive_interval = htobe32(timeout * 1000); /* The session ID, representing this particular transfer */
+    request->meta.keep_alive_interval = htobe32(session->request_meta.keep_alive_interval); /* Keep alive interval, 0 means no keep alive */
     request->meta.nof_intervals = session->request_meta.nof_intervals; /* Number of intervals */
     if (request->meta.nof_intervals > (sizeof(request->meta.intervals) / sizeof(request->meta.intervals[0]))) {
         request->meta.nof_intervals = (sizeof(request->meta.intervals) / sizeof(request->meta.intervals[0]));
