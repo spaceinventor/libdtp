@@ -4,6 +4,7 @@
 #include <math.h>
 #include <csp/csp.h>
 #include <dtp/platform.h>
+#include <endian.h>
 #include "dtp/dtp_log.h"
 #include "dtp/dtp_protocol.h"
 #include "dtp/dtp_session.h"
