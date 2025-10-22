@@ -37,9 +37,28 @@ static int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet, void
             dtp_start_req_t *request = (dtp_start_req_t *)&vmem_request->body[0];
             uint32_t chunk_size = be16toh(request->meta.mtu) - (2 * sizeof(uint32_t));
 
+            uint32_t request_dtp_version = be32toh(request->meta.version);
             printf("Received DTP VMEM start transfer request.\n");
+            printf("\tDTP version: %"PRIu32"\n", request_dtp_version);
             printf("\tSession ID: %"PRIu32"\n", be32toh(request->meta.session_id));
             printf("\tMTU: %"PRIu16"\n", be16toh(request->meta.mtu));
+            if (request_dtp_version != DTP_VERSION) {
+                printf("Incompatible DTP version requested: %"PRIu32", expected: %"PRIu32"\n", request_dtp_version, DTP_VERSION);
+                csp_packet_t *result = csp_buffer_get(0);
+                if (result == NULL) {
+                    return -1;
+                }
+                dtp_meta_resp_t *meta_resp = (dtp_meta_resp_t *)result->data;
+                result->length = sizeof(dtp_meta_req_t);
+                meta_resp->version = htobe32(DTP_VERSION);
+                meta_resp->size_in_bytes = 0;
+                meta_resp->total_payload_size = 0;
+                csp_send(conn, result);
+                break;
+            }
+            printf("\tThroughput: %"PRIu32" bytes/second\n", be32toh(request->meta.throughput));
+            msg.meta.version = request_dtp_version;
+            
             msg.meta.mtu = be16toh(request->meta.mtu);
             msg.meta.throughput = be32toh(request->meta.throughput);
             msg.meta.session_id = be32toh(request->meta.session_id);
