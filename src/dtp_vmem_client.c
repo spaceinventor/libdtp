@@ -39,6 +39,7 @@ int vmem_request_dtp_start_download(dtp_t *session, int node, uint32_t session_i
     request->size = htobe32(size);
 
     /* DTP specifics */
+    request->meta.version = htobe32(session->request_meta.version); /* DTP version */
     request->meta.throughput = htobe32(session->request_meta.throughput); /* Throughput in bytes/second */
     request->meta.mtu = htobe16(session->request_meta.mtu); /* MTU size (size of the *useful* payload DTP will use to split the payload) in BYTES */
     request->meta.session_id = htobe32(session_id); /* The session ID, representing this particular transfer */
@@ -57,8 +58,19 @@ int vmem_request_dtp_start_download(dtp_t *session, int node, uint32_t session_i
     /* Send the request */
     csp_send(conn, packet);
 
+    packet = csp_read(conn, timeout);
     /* Close connection */
     csp_close(conn);
+
+    if (packet) {
+        /* Check the response */
+        dtp_meta_resp_t *meta_resp = (dtp_meta_resp_t *)packet->data;
+        if(meta_resp->version != htobe32(DTP_VERSION)) {
+            printf("Incompatible DTP version received: %"PRIu32", expected: %"PRIu32"\n", be32toh(meta_resp->version), DTP_VERSION);
+            csp_buffer_free(packet);
+            return -1;
+        }
+    }
 
     return 0;
 
