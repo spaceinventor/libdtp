@@ -45,7 +45,9 @@ static int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet, void
             msg.meta.session_id = be32toh(request->meta.session_id);
             msg.meta.payload_id = request->meta.payload_id;
             msg.meta.nof_intervals = request->meta.nof_intervals;
+#ifdef DTP_V2
             msg.meta.keep_alive_interval = be32toh(request->meta.keep_alive_interval);
+#endif
             printf("\tStart address: 0x%016"PRIX64"\n", be64toh(request->vaddr));
             printf("\tSize: %"PRIu32"\n", be32toh(request->size));
             printf("\tChunk size: %"PRIu32"\n", chunk_size);
@@ -65,7 +67,9 @@ static int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet, void
             msg.size = be32toh(request->size);
 
             vmem_context->session_id = be32toh(request->meta.session_id);
+#ifdef DTP_V2
             server_transfer_ctx.client_alive_ts = csp_get_ms();
+#endif
             message_queue_send(&vmem_context->queue, &msg);
         }
         break;
@@ -105,7 +109,9 @@ static int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet, void
         case DTP_REQUEST_TRANSFER_ALIVE:
         {
             if(server_transfer_ctx.keep_running) {
+#ifdef DTP_V2
                 server_transfer_ctx.client_alive_ts = csp_get_ms();
+#endif
                 printf("Received DTP ALIVE from client\n");
             }
         }

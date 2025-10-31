@@ -20,7 +20,9 @@ dtp_result send_remote_meta_req(dtp_t *session)
         packet->length = sizeof(dtp_meta_req_t);
         dtp_meta_req_t *req = (dtp_meta_req_t *)packet->data;
         memcpy(req, &(session->request_meta), sizeof(dtp_meta_req_t));
+#ifdef DTP_V2
         req->keep_alive_interval = htobe32(session->request_meta.keep_alive_interval);
+#endif
         csp_send(session->conn, packet);
         res = DTP_OK;
     }

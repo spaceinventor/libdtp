@@ -180,10 +180,12 @@ static bool dtp_server_poll_loop(uint32_t op, void *context) {
         csp_sendto(CSP_PRIO_NORM, transfer->ctx->destination, 8 /* DTP DATA PORT */, 0, 0, packet);
         transfer->nof_csp_packets++;
         pkt_cnt++;
+#ifdef DTP_V2
         if ((transfer->ctx->request.keep_alive_interval > 0) && (csp_get_ms() - transfer->ctx->client_alive_ts) > (transfer->ctx->request.keep_alive_interval * 2) + 500 ) {
             dbg_warn("Client no longer alive, aborting...\n");
             transfer->ctx->keep_running = false;
         }
+#endif
     }
 
     /* Decide if we need to keep carrying on with poll'ing */
@@ -205,7 +207,9 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
     transfer.bytes_sent = 0;
     transfer.nof_csp_packets = 0;
     transfer.nof_packets_per_round = metric.packets_per_round;
+#ifdef DTP_V2
     ctx->client_alive_ts = csp_get_ms();
+#endif
     dbg_log("Number of intervals: %u", ctx->request.nof_intervals);
     for(uint8_t i = 0; i < ctx->request.nof_intervals && ctx->keep_running; i++)
     {
@@ -259,7 +263,9 @@ csp_packet_t *setup_server_transfer(dtp_server_transfer_ctx_t *ctx, uint16_t dst
     csp_packet_t *result = 0;
 
     memcpy(&(ctx->request), (dtp_meta_req_t *)request->data, sizeof(dtp_meta_req_t));
+#ifdef DTP_V2
     ctx->request.keep_alive_interval = be32toh(ctx->request.keep_alive_interval);
+#endif
     ctx->destination = dst;
 
     /* Get the payload information */

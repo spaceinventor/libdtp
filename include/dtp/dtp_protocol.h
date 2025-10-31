@@ -30,7 +30,9 @@ extern "C"
         uint8_t payload_id; /** Payload ID, conceptual identifier for the payload to retrieve, semantic is entirely server-specific */
         uint32_t session_id; /** Session ID, used to identify the session */
         uint16_t mtu; /** MTU size (size of the *useful* payload DTP will use to split the payload) in BYTES */
+#ifdef DTP_V2
         uint32_t keep_alive_interval; /** the client will send a keep alive request to the server every "keep_alive_interval" milliseconds */
+#endif
         interval_t intervals[8]; /** list of start-stop pairs to transfer, number is set by nof_intervals above */
     } dtp_meta_req_t;
 
@@ -40,7 +42,9 @@ extern "C"
         bool keep_running; /** Flag indicating if the transfer should continue or not */
         dtp_meta_req_t request; /** List of intervals to transfer */
         dtp_payload_meta_t payload_meta; /** Payload info, see dtp_payload_meta_t */
+#ifdef DTP_V2
         uint32_t client_alive_ts; /** Timestamp of the latest received indication that the client is still alive  */
+#endif
     } dtp_server_transfer_ctx_t;
 
     /**
