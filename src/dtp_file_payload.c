@@ -161,8 +161,7 @@ void dtp_file_payload_del(uint8_t id) {
     }
 }
 
-/* This method is implemented to tell the DTP server which payload to use */
-bool get_payload_meta(dtp_payload_meta_t *meta, uint8_t payload_id) {
+bool dtp_file_payload_get_meta(dtp_payload_meta_t *meta, uint8_t payload_id) {
     bool result = true;
 
     payload_file_t *payload = payload_lookup(payload_id);
