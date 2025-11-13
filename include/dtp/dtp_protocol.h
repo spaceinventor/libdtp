@@ -13,6 +13,8 @@ extern "C"
 #include "dtp/dtp.h"
 #include "dtp/platform.h"
 
+    extern const uint32_t DTP_VERSION;
+
     /* CSP connection  type forward declaration*/
     typedef struct csp_packet_s csp_packet_t;
 
@@ -25,6 +27,7 @@ extern "C"
     /** Transfer request */
     typedef struct
     {
+        uint32_t version; /** Protocol version from client */
         uint32_t throughput; /** max server throughput in bytes/second */
         uint8_t nof_intervals; /** Number of segments to transfer, see the intervals below */
         uint8_t payload_id; /** Payload ID, conceptual identifier for the payload to retrieve, semantic is entirely server-specific */
@@ -48,6 +51,7 @@ extern "C"
      */
     typedef struct
     {
+        uint32_t version; /** Protocol version from server */
         uint32_t size_in_bytes; /** Total size of payload data to be sent during this transfer */
         uint32_t total_payload_size; /** Total size of payload, for info (will be >= size_in_bytes) */
     } dtp_meta_resp_t;
@@ -61,7 +65,7 @@ extern "C"
         uint32_t last_packet; /** The highest packet number occurring in this transmission */
         uint32_t total_duration_ms; /** The expected total duration of this session [ms] */
     }  dtp_metrics_t;
-    
+
     extern dtp_server_transfer_ctx_t server_transfer_ctx;
 
     extern csp_packet_t *setup_server_transfer(dtp_server_transfer_ctx_t *ctx, uint16_t dst, csp_packet_t *request);

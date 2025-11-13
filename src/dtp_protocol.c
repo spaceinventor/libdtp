@@ -9,6 +9,8 @@
 #include "dtp/dtp_protocol.h"
 #include "dtp/dtp_session.h"
 
+const uint32_t DTP_VERSION = 1;
+
 dtp_server_transfer_ctx_t server_transfer_ctx;
 
 dtp_result send_remote_meta_req(dtp_t *session)
@@ -36,8 +38,17 @@ dtp_result read_remote_meta_resp(dtp_t *session)
     {
         res = DTP_OK;
         dtp_meta_resp_t *meta_resp = (dtp_meta_resp_t *)packet->data;
-        session->payload_size = meta_resp->total_payload_size;
-        dbg_log("Setting session total bytes to %u", meta_resp->size_in_bytes);
+        uint32_t req_version = be32toh(meta_resp->version);
+        if (req_version != DTP_VERSION) {
+            dbg_warn("Incompatible DTP version received: %"PRIu32", expected: %"PRIu32"", req_version, DTP_VERSION);
+            session->dtp_errno = DTP_EINVAL;
+            res = DTP_ERR;
+            csp_buffer_free(packet);
+            return res;
+        }
+
+        session->payload_size = be32toh(meta_resp->total_payload_size);
+        dbg_log("Setting session total bytes to %u", be32toh(meta_resp->size_in_bytes));
         csp_buffer_free(packet);
     } else {
         session->dtp_errno = DTP_CONNECTION_FAILED;
