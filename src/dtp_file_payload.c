@@ -94,17 +94,18 @@ static uint32_t payload_read(uint8_t payload_id, uint32_t offset, void *output, 
 
 payload_file_t *dtp_file_payload_add(uint8_t id, const char *filename) {
 
-    payload_file_t *payload = NULL;
+    payload_file_t *payload;
 
     payload = payload_lookup(id);
-    if (!payload) {
-        payload = (payload_file_t *)malloc(sizeof(payload_file_t));
-    }
     if (payload) {
-        if (filename) {
-            FILE *file = fopen(filename, "rb");
-            if (file) {
-                payload = (payload_file_t *)malloc(sizeof(payload_file_t));
+        dtp_file_payload_del(id);
+        payload = NULL;
+    }
+    if (filename) {
+        FILE *file = fopen(filename, "rb");
+        if (file) {
+            payload = (payload_file_t *)calloc(1, sizeof(payload_file_t));
+            if (payload) {
                 payload->filename = strdup(filename);
                 payload->id = id;
                 payload->file = NULL;
@@ -116,9 +117,11 @@ payload_file_t *dtp_file_payload_add(uint8_t id, const char *filename) {
                 payload->next = g_payload_list;
                 g_payload_list = payload;
             } else {
-                printf("ERROR: Could not open file '%s' - %s\n", filename, strerror(errno));
-                payload = NULL;
+                fclose(file);
             }
+        } else {
+            printf("ERROR: Could not open file '%s' - %s\n", filename, strerror(errno));
+            payload = NULL;
         }
     }
 
