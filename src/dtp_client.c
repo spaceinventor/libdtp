@@ -143,6 +143,7 @@ dtp_result dtp_start_transfer(dtp_t *session)
     }
     res = start_receiving_data(session);
 get_out:
+    csp_close(conn);
     return res;
 }
 
@@ -191,10 +192,15 @@ dtp_result start_receiving_data(dtp_t *session)
         }
 
         /* Expect reception within at least 2 rounds of transmitting */
-        packet = csp_recvfrom(socket, metric.round_time_ms * 10);
+        packet = csp_recvfrom(socket, metric.round_time_ms * 2);
         if (NULL == packet) {
-            idle_ms += (metric.round_time_ms * 10);
+            idle_ms += (metric.round_time_ms);
             dbg_warn("No data received for %" PRIu32 " [ms], last packet_seq=%" PRIu32 "", idle_ms, packet_seq);
+            if(idle_ms > (session->timeout * 1000)) {
+                result = DTP_CANCELLED;
+                session->active = false;
+                break;                
+            }
             continue;
         }
 
