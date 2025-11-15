@@ -201,6 +201,7 @@ static void apm_on_deserialize(dtp_t *session, void *ctx) {
     f = fopen(dtp_file_name, "rb");
     if (f == NULL) {
         dbg_warn("Deserialization: could not open '%s'!", dtp_file_name);
+        session->dtp_errno = DTP_EINVAL;
         return;
     }
 
