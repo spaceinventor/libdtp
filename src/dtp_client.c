@@ -186,6 +186,8 @@ dtp_result start_receiving_data(dtp_t *session)
     uint32_t expected_eot_ts_ms = now_ts_ms + metric.total_duration_ms + (metric.round_time_ms * 2);
     uint32_t start_ts_ms = now_ts_ms;
     uint32_t last_alive = now_ts_ms;
+    uint32_t rounded_to_ms = 0;
+    uint32_t last_print = 0;
 
     /* Enter the receiver loop until we have either received all packets or the duration has expired */
     while ((now_ts_ms + idle_ms) < expected_eot_ts_ms && nof_packets < metric.nof_packets)
@@ -201,7 +203,11 @@ dtp_result start_receiving_data(dtp_t *session)
         packet = csp_recvfrom(socket, metric.round_time_ms * 2);
         if (NULL == packet) {
             idle_ms += (metric.round_time_ms);
-            dbg_warn("No data received for %" PRIu32 " [ms], last packet_seq=%" PRIu32 "", idle_ms, packet_seq);
+            rounded_to_ms = idle_ms - (idle_ms % 1000);
+            if(rounded_to_ms > last_print) {
+                last_print = rounded_to_ms;
+                dbg_warn("No data received for %" PRIu32 " [ms], last packet_seq=%" PRIu32 "", idle_ms, packet_seq);
+            }
             if(idle_ms > (session->timeout * 1000)) {
                 result = DTP_CANCELLED;
                 session->active = false;
