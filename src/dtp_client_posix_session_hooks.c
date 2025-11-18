@@ -239,7 +239,11 @@ static void apm_on_deserialize(dtp_t *session, void *ctx) {
             if (nof_segments > sizeof(session->request_meta.intervals)/sizeof(session->request_meta.intervals[0])) {
                 nof_segments = sizeof(session->request_meta.intervals)/sizeof(session->request_meta.intervals[0]);
             }
-            for_each_segment(segments, create_meta_data, &session->request_meta);
+            if(nof_segments) {
+                for_each_segment(segments, create_meta_data, &session->request_meta);
+            } else {
+                session->request_meta.nof_intervals = 0;
+            }
             free_segments(segments);
 
             ctx->received_segments = received_segments;

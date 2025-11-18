@@ -109,11 +109,11 @@ segments_ctx_t *get_complement_segment(segments_ctx_t *ctx, uint32_t start, uint
     if(0 != ctx->segments) {
         segment_t *runner  = ctx->segments;
         while(runner) {
-            if(runner->start == start) {
+            if(runner->start == start && (runner->end + 1) < end) {
                 seg_start = runner->end + 1;
                 runner = runner->next;
                 continue;
-            } else if(seg_start <= (runner->start - 1)) {
+            } else if(runner->start > 0 && seg_start <= (runner->start - 1)) {
                 seg_end = runner->start - 1;
                 complements->cur_segment = malloc(sizeof(segment_t));
                 complements->cur_segment->start = seg_start;

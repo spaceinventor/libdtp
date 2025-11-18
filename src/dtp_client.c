@@ -36,7 +36,6 @@ dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_th
         } else {
             dtp_params remote_cfg = { .throughput.value = max_throughput };
             dtp_set_opt(session, DTP_THROUGHPUT_CFG, &remote_cfg);
-            goto start_download;
         }
         if (session->bytes_received == session->payload_size || session->request_meta.nof_intervals == 0) {
             dbg_log("No more data to fetch.");
