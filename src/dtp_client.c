@@ -30,18 +30,23 @@ dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_th
     if (resume) {
         /* Deserializing a session will override parameters */
         res = dtp_deserialize_session(session, ctx);
-        if (DTP_OK != res) {
-            dbg_warn("Deserialization failed: %s", dtp_strerror(dtp_errno(session)));
-            goto get_out_please;
+        if(dtp_errno(session) != DTP_NO_ERR) {
+            dbg_warn("Deserialization failed due to invalid argument, starting fresh download...");
+            goto download_all;
+        } else {
+            dtp_params remote_cfg = { .throughput.value = max_throughput };
+            dtp_set_opt(session, DTP_THROUGHPUT_CFG, &remote_cfg);
+            goto start_download;
         }
         if (session->bytes_received == session->payload_size || session->request_meta.nof_intervals == 0) {
             dbg_log("No more data to fetch.");
             session->dtp_errno = DTP_SESSION_EXHAUSTED;
             goto get_out_please;
         }
-        dtp_params remote_cfg = { .throughput.value = max_throughput };
-        dtp_set_opt(session, DTP_THROUGHPUT_CFG, &remote_cfg);
-    } else {
+    }
+    download_all:
+    {
+        dbg_warn("Downloading all contents");
         dtp_params remote_cfg = { .remote_cfg.node = server };
         res = dtp_set_opt(session, DTP_REMOTE_CFG, &remote_cfg);
         if (DTP_OK != res) {
@@ -78,6 +83,7 @@ dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_th
             goto get_out_please;
         }
     }
+start_download:
     session->request_meta.keep_alive_interval = keep_alive_interval;
 
     return session;
@@ -143,6 +149,7 @@ dtp_result dtp_start_transfer(dtp_t *session)
     }
     res = start_receiving_data(session);
 get_out:
+    csp_close(conn);
     return res;
 }
 
@@ -179,6 +186,8 @@ dtp_result start_receiving_data(dtp_t *session)
     uint32_t expected_eot_ts_ms = now_ts_ms + metric.total_duration_ms + (metric.round_time_ms * 2);
     uint32_t start_ts_ms = now_ts_ms;
     uint32_t last_alive = now_ts_ms;
+    uint32_t rounded_to_ms = 0;
+    uint32_t last_print = 0;
 
     /* Enter the receiver loop until we have either received all packets or the duration has expired */
     while ((now_ts_ms + idle_ms) < expected_eot_ts_ms && nof_packets < metric.nof_packets)
@@ -191,10 +200,19 @@ dtp_result start_receiving_data(dtp_t *session)
         }
 
         /* Expect reception within at least 2 rounds of transmitting */
-        packet = csp_recvfrom(socket, metric.round_time_ms * 10);
+        packet = csp_recvfrom(socket, metric.round_time_ms * 2);
         if (NULL == packet) {
-            idle_ms += (metric.round_time_ms * 10);
-            dbg_warn("No data received for %" PRIu32 " [ms], last packet_seq=%" PRIu32 "", idle_ms, packet_seq);
+            idle_ms += (metric.round_time_ms);
+            rounded_to_ms = idle_ms - (idle_ms % 1000);
+            if(rounded_to_ms > last_print) {
+                last_print = rounded_to_ms;
+                dbg_warn("No data received for %" PRIu32 " [ms], last packet_seq=%" PRIu32 "", idle_ms, packet_seq);
+            }
+            if(idle_ms > (session->timeout * 1000)) {
+                result = DTP_CANCELLED;
+                session->active = false;
+                break;                
+            }
             continue;
         }
 
