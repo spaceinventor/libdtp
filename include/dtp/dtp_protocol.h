@@ -28,12 +28,13 @@ extern "C"
         uint32_t throughput; /** max server throughput in bytes/second */
         uint8_t nof_intervals; /** Number of segments to transfer, see the intervals below */
         uint8_t payload_id; /** Payload ID, conceptual identifier for the payload to retrieve, semantic is entirely server-specific */
+        uint8_t reserved1;
+        uint8_t reserved2;
         uint32_t session_id; /** Session ID, used to identify the session */
         uint16_t mtu; /** MTU size (size of the *useful* payload DTP will use to split the payload) in BYTES */
-        uint32_t keep_alive_interval; /** the client will send a keep alive request to the server every "keep_alive_interval" milliseconds */
+        uint16_t keep_alive_interval; /** the client will send a keep alive request to the server every "keep_alive_interval" milliseconds */
         interval_t intervals[8]; /** list of start-stop pairs to transfer, number is set by nof_intervals above */
     } dtp_meta_req_t;
-
     typedef struct {
         uint16_t destination; /** Destination port */
         uint32_t size_in_bytes; /** total number of bytes to transfer */

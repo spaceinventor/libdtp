@@ -256,9 +256,9 @@ static void apm_on_deserialize(dtp_t *session, void *ctx) {
 
 static bool segment_dumper(uint32_t idx, uint32_t start, uint32_t end, void *context) {
     if (end == UINT32_MAX) {
-        printf("\t\tinterval #%u: start=%u, end=Rest of payload\n", idx, start);
+        printf("\t\tinterval #%"PRIu32": start=%"PRIu32", end=Rest of payload\n", idx, start);
     } else {
-        printf("\t\tinterval #%u: start=%u, end=%u\n", idx, start, end);
+        printf("\t\tinterval #%"PRIu32": start=%"PRIu32", end=%"PRIu32"\n", idx, start, end);
     }
     return true;
 }
@@ -270,13 +270,13 @@ static void apm_on_dump_info(dtp_t *session, uint32_t info, void *context) {
         {
             printf("  remote node address: %u\n", session->remote_cfg.node);
             printf("  timeout: %u [s]\n", session->timeout);
-            printf("  throughput: %u KByte/s\n", session->request_meta.throughput);
+            printf("  throughput: %"PRIu32" KByte/s\n", session->request_meta.throughput);
             printf("  MTU: %u Bytes\n", session->request_meta.mtu);
             printf("  payload id: %u\n", session->request_meta.payload_id);
-            printf("  session id: %u\n", session->request_meta.session_id);
-            printf("  bytes_received: %u Bytes\n", session->bytes_received);
-            printf("  payload size: %u Bytes\n", session->payload_size);
-            printf("  Missing: %u Bytes\n", session->payload_size - session->bytes_received);
+            printf("  session id: %"PRIu32"\n", session->request_meta.session_id);
+            printf("  bytes_received: %"PRIu32" Bytes\n", session->bytes_received);
+            printf("  payload size: %"PRIu32" Bytes\n", session->payload_size);
+            printf("  Missing: %"PRIu32" Bytes\n", session->payload_size - session->bytes_received);
             hook_ctx_t *ctx = (hook_ctx_t *)session->hooks.hook_ctx;
             if (ctx == NULL) {
                 printf("  No segments received\n");
@@ -284,7 +284,7 @@ static void apm_on_dump_info(dtp_t *session, uint32_t info, void *context) {
             }
             segments_ctx_t *segments = ctx->received_segments;
             uint32_t nof_segments = get_nof_segments(segments);
-            printf("  Received Intervals: %u\n", nof_segments);
+            printf("  Received Intervals: %"PRIu32"\n", nof_segments);
             for_each_segment(segments, segment_dumper, NULL);
         }
         break;
