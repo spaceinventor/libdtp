@@ -148,7 +148,7 @@ void print_segments(segments_ctx_t *ctx) {
         segment_t *runner  = ctx->segments;
         uint32_t i = 0;
         while(runner) {
-            printf("Segment #%d, start=%d, end=%d\n", i++, runner->start, runner->end);
+            printf("Segment #%"PRIu32", start=%"PRIu32", end=%"PRIu32"\n", i++, runner->start, runner->end);
             runner = runner->next;
         }
     }

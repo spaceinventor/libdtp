@@ -187,6 +187,6 @@ void dtp_file_payload_info() {
     /* Parse the list of payloads */
     payload_file_t *iter;
     for (iter = g_payload_list; iter != NULL; iter = iter->next) {
-        printf("%3d | %12ld | %s\n", iter->id, iter->size, iter->filename);
+        printf("%3d | %"PRIu64" | %s\n", iter->id, iter->size, iter->filename);
     }
 }
