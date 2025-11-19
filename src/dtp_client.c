@@ -30,57 +30,54 @@ dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_th
     if (resume) {
         /* Deserializing a session will override parameters */
         res = dtp_deserialize_session(session, ctx);
-        if(dtp_errno(session) != DTP_NO_ERR) {
-            dbg_warn("Deserialization failed due to invalid argument, starting fresh download...");
-            goto download_all;
-        } else {
-            dtp_params remote_cfg = { .throughput.value = max_throughput };
-            dtp_set_opt(session, DTP_THROUGHPUT_CFG, &remote_cfg);
+        if (res == DTP_OK) {
+            if(dtp_errno(session) == DTP_NO_ERR) {
+                if (session->bytes_received == session->payload_size || session->request_meta.nof_intervals == 0) {
+                    dbg_log("No more data to fetch.");
+                    session->dtp_errno = DTP_SESSION_EXHAUSTED;
+                    goto get_out_please;
+                } else {
+                    goto start_download;
+                }
+            }
         }
-        if (session->bytes_received == session->payload_size || session->request_meta.nof_intervals == 0) {
-            dbg_log("No more data to fetch.");
-            session->dtp_errno = DTP_SESSION_EXHAUSTED;
-            goto get_out_please;
-        }
+        dbg_warn("Deserialization failed due to invalid argument, starting fresh download...");
     }
-    download_all:
-    {
-        dbg_warn("Downloading all contents");
-        dtp_params remote_cfg = { .remote_cfg.node = server };
-        res = dtp_set_opt(session, DTP_REMOTE_CFG, &remote_cfg);
-        if (DTP_OK != res) {
-            goto get_out_please;
-        }
+    dbg_warn("Downloading all contents");
+    dtp_params remote_cfg = { .remote_cfg.node = server };
+    res = dtp_set_opt(session, DTP_REMOTE_CFG, &remote_cfg);
+    if (DTP_OK != res) {
+        goto get_out_please;
+    }
 
-        remote_cfg.throughput.value = max_throughput;
-        res = dtp_set_opt(session, DTP_THROUGHPUT_CFG, &remote_cfg);
-        if (DTP_OK != res) {
-            goto get_out_please;
-        }
+    remote_cfg.throughput.value = max_throughput;
+    res = dtp_set_opt(session, DTP_THROUGHPUT_CFG, &remote_cfg);
+    if (DTP_OK != res) {
+        goto get_out_please;
+    }
 
-        remote_cfg.timeout.value = timeout;
-        res = dtp_set_opt(session, DTP_TIMEOUT_CFG, &remote_cfg);
-        if (DTP_OK != res) {
-            goto get_out_please;
-        }
-        
-        remote_cfg.payload_id.value = payload_id;
-        res = dtp_set_opt(session, DTP_PAYLOAD_ID_CFG, &remote_cfg);
-        if (DTP_OK != res) {
-            goto get_out_please;
-        }
-        
-        remote_cfg.mtu.value = mtu;
-        res = dtp_set_opt(session, DTP_MTU_CFG, &remote_cfg);
-        if (DTP_OK != res) {
-            goto get_out_please;
-        }
+    remote_cfg.timeout.value = timeout;
+    res = dtp_set_opt(session, DTP_TIMEOUT_CFG, &remote_cfg);
+    if (DTP_OK != res) {
+        goto get_out_please;
+    }
+    
+    remote_cfg.payload_id.value = payload_id;
+    res = dtp_set_opt(session, DTP_PAYLOAD_ID_CFG, &remote_cfg);
+    if (DTP_OK != res) {
+        goto get_out_please;
+    }
+    
+    remote_cfg.mtu.value = mtu;
+    res = dtp_set_opt(session, DTP_MTU_CFG, &remote_cfg);
+    if (DTP_OK != res) {
+        goto get_out_please;
+    }
 
-        remote_cfg.session_id.value = session_id;
-        res = dtp_set_opt(session, DTP_SESSION_ID_CFG, &remote_cfg);
-        if (DTP_OK != res) {
-            goto get_out_please;
-        }
+    remote_cfg.session_id.value = session_id;
+    res = dtp_set_opt(session, DTP_SESSION_ID_CFG, &remote_cfg);
+    if (DTP_OK != res) {
+        goto get_out_please;
     }
 start_download:
     session->request_meta.keep_alive_interval = keep_alive_interval;
