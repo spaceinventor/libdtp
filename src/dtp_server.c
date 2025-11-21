@@ -36,6 +36,14 @@ static void dtp_server_run(bool *exit_server)
         }
         dbg_log("Got meta data request");
         packet = setup_server_transfer(&server_transfer_ctx, csp_conn_src(conn), packet);
+        dtp_meta_resp_t *meta_resp = (dtp_meta_resp_t *)packet->data;
+        if(meta_resp->size_in_bytes == 0) {
+            /* Something went wrong, just send the response back */
+            csp_send(conn, packet);
+            csp_close(conn);
+            dbg_log("Transfer done");
+            continue;
+        }
         server_transfer_ctx.keep_running = true;
         if(packet) {
             csp_send(conn, packet);
@@ -256,28 +264,35 @@ extern dtp_result start_sending_data(dtp_server_transfer_ctx_t *ctx)
 }
 
 csp_packet_t *setup_server_transfer(dtp_server_transfer_ctx_t *ctx, uint16_t dst, csp_packet_t *request) {
-    csp_packet_t *result = 0;
-
+    csp_packet_t *result = request;
     memcpy(&(ctx->request), (dtp_meta_req_t *)request->data, sizeof(dtp_meta_req_t));
+    dtp_meta_resp_t *meta_resp = (dtp_meta_resp_t *)result->data;
+
+    uint32_t req_version = be32toh(ctx->request.version);
+    if (req_version != DTP_VERSION) {
+        dbg_warn("Incompatible DTP version received: %"PRIu32", expected: %"PRIu32"", req_version, DTP_VERSION);
+        result->length = sizeof(dtp_meta_req_t);
+        meta_resp->version = htobe32(DTP_VERSION);
+        meta_resp->size_in_bytes = 0;
+        meta_resp->total_payload_size = 0;
+        return result;
+    }
     ctx->request.keep_alive_interval = be32toh(ctx->request.keep_alive_interval);
     ctx->destination = dst;
 
     /* Get the payload information */
     if (false == get_payload_meta(&ctx->payload_meta, ctx->request.payload_id)) {
+        meta_resp->size_in_bytes = 0;
+        meta_resp->total_payload_size = 0;
         return result;
     }
 
     ctx->size_in_bytes = compute_transfer_size(ctx);
 
-    csp_buffer_free(request);
-    result = csp_buffer_get(0);
-    if (result) {
-        /* prepare the response */
-        result->length = sizeof(dtp_meta_req_t);
-        dtp_meta_resp_t *meta_resp = (dtp_meta_resp_t *)result->data;
-        meta_resp->total_payload_size = ctx->payload_meta.size;
-        meta_resp->size_in_bytes = ctx->size_in_bytes;
-    }
+    /* prepare the response */
+    result->length = sizeof(dtp_meta_req_t);
+    meta_resp->total_payload_size = htobe32(ctx->payload_meta.size);
+    meta_resp->size_in_bytes = htobe32(ctx->size_in_bytes);
     return result;
 }
 
