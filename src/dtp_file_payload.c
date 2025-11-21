@@ -17,7 +17,7 @@ typedef struct payload_file_s {
     uint32_t (*read)(uint8_t payload_id, uint32_t offset, void *output, uint32_t size, void *context);
 } payload_file_t;
 
-static const char test_data[] = "0123456789ABCDE";
+static const char test_data[] = "0123456789ABCDEF";
 static uint32_t test_memory_payload_read(uint8_t payload_id, uint32_t offset, void *output, uint32_t size, void *context);
 
 static payload_file_t test_payload = {
@@ -25,7 +25,7 @@ static payload_file_t test_payload = {
     .id = 255,
     .filename = ":mem:",
     .file = NULL,
-    .size = 1024 * 1024 * 20, /* 20 megabytes */
+    .size = 67102980,
     .read = test_memory_payload_read
 };
 
@@ -35,17 +35,15 @@ static payload_file_t *g_payload_list = &test_payload;
 static uint32_t test_memory_payload_read(uint8_t payload_id, uint32_t offset, void *output, uint32_t size, void *context) {
     uint32_t res = 0;
     uint32_t so_far = 0;
-    if (so_far % sizeof(test_data) == 0) {
-        while(so_far < size) {
-            memcpy(output + so_far, test_data, sizeof(test_data));
-            so_far += sizeof(test_data);
-        }
-    } else {
-        while(so_far < (size - sizeof(test_data))) {
-            memcpy(output + so_far, test_data, sizeof(test_data));
-            so_far += sizeof(test_data);
-        }
-        memcpy(output + so_far, test_data, so_far % sizeof(test_data));
+    uint8_t start = offset % 16;
+    while(so_far < size) {
+        memcpy(output + so_far, &test_data[start], 16 - start);
+        so_far += 16 - start;
+        start = 0;
+    }
+    if (so_far > size) {
+        memcpy(output + so_far - 16 , test_data, so_far - size);
+        so_far += so_far - size;
     }
     res = size;
     return res;
