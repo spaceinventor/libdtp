@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "dtp/dtp_log.h"
-#include "segments_utils.h"
+#include <dtp/dtp_client_posix_segments_utils.h>
 
 typedef struct segment_t segment_t;
 typedef struct segment_t {
@@ -134,13 +134,6 @@ segments_ctx_t *get_complement_segment(segments_ctx_t *ctx, uint32_t start, uint
             append_segment(complements);
         }
     }
-    // else {
-    //     complements->cur_segment = malloc(sizeof(segment_t));
-    //     complements->cur_segment->start = end;
-    //     complements->cur_segment->end = 0xffffffff;
-    //     complements->cur_segment->next = 0;
-    //     append_segment(complements);
-    // }
     return complements;
 }
 
@@ -204,6 +197,48 @@ void add_segment(segments_ctx_t *ctx, uint32_t start, uint32_t end) {
         }
     }
     ctx->nof_segments++;
+}
+
+void remove_segment(segments_ctx_t *ctx, uint32_t start, uint32_t end) {
+    if (0 != ctx->segments) {
+        segment_t *runner = ctx->segments;
+        if(runner && runner->start == start && runner->end == end) {
+            ctx->segments = runner->next;
+            ctx->nof_segments--;
+            free(runner);
+            return;
+        }
+        while (runner->next) {
+            if(runner->next->start == start && runner->next->end == end) {
+                free(runner->next);
+                runner->next = runner->next->next;
+                ctx->nof_segments--;
+                break;
+            }
+            runner = runner->next;
+        }
+    }
+}
+
+void remove_segment_el(segments_ctx_t *ctx, segment_t *s) {
+    if (0 != ctx->segments) {
+        segment_t *runner = ctx->segments;
+        if(runner == s) {
+            ctx->segments = runner->next;
+            ctx->nof_segments--;
+            free(s);
+            return;
+        }
+        while (runner->next) {
+            if(runner->next == s) {
+                runner->next = s->next;
+                ctx->nof_segments--;
+                free(s);
+                break;
+            }
+            runner = runner->next;
+        }
+    }
 }
 
 segments_ctx_t *merge_segments(segments_ctx_t *a, segments_ctx_t *b) {

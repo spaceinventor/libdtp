@@ -67,6 +67,16 @@ extern void for_each_segment(segments_ctx_t *ctx, bool (*cb)(uint32_t idx, uint3
  */
 extern void add_segment(segments_ctx_t *ctx, uint32_t start, uint32_t end);
 
+/**
+ * Manually remove a segment
+ * @param ctx self-explanatory
+ * @param start of the segment range in bytes
+ * @param end of the segment range in bytes
+ * 
+ * If a segment with the given start and end is found, it is removed from the list.
+ */
+extern void remove_segment(segments_ctx_t *ctx, uint32_t start, uint32_t end);
+
 extern segments_ctx_t *merge_segments(segments_ctx_t *a, segments_ctx_t *b);
 
 #ifdef __cplusplus

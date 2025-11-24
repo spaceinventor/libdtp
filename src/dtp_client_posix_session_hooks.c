@@ -5,7 +5,7 @@
 #include "dtp/dtp.h"
 #include "dtp/dtp_log.h"
 #include "dtp/dtp_session.h"
-#include "segments_utils.h"
+#include <dtp/dtp_client_posix_segments_utils.h>
 
 static void apm_on_start(dtp_t *session);
 static bool apm_on_data_packet(dtp_t *session, csp_packet_t *p);
@@ -80,7 +80,9 @@ static bool apm_on_data_packet(dtp_t *session, csp_packet_t *packet) {
 
 static void apm_on_end(dtp_t *session) {
     hook_ctx_t *ctx = (hook_ctx_t *)session->hooks.hook_ctx;
-    fclose(ctx->output);
+    if(ctx->output) {
+        fclose(ctx->output);
+    }
     close_segments(ctx->segments);
     uint32_t nof_segments = get_nof_segments(ctx->segments);
     dbg_log("\nReceived segments (%" PRIu32 "):", nof_segments);
@@ -152,13 +154,6 @@ static void apm_on_serialize(dtp_t *session, void *ctx) {
         fwrite(&session->bytes_received, sizeof(session->bytes_received), 1, f);
         fwrite(&session->payload_size, sizeof(session->payload_size), 1, f);
         segments_ctx_t *segments = ((hook_ctx_t *)session->hooks.hook_ctx)->segments;
-        if(segments) {
-            // number of received segments
-            uint32_t nof_segments = get_nof_segments(segments);
-            fwrite(&nof_segments, sizeof(nof_segments), 1, f);
-            for_each_segment(segments, write_segment_to_file, f);
-        }
-
         if(segments) {
             // number of received segments
             uint32_t nof_segments = get_nof_segments(segments);
