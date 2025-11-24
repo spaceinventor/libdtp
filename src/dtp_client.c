@@ -151,14 +151,14 @@ get_out:
 
 dtp_result start_receiving_data(dtp_t *session)
 {
-    dtp_result result = DTP_OK;
+    dtp_result result = DTP_CANCELLED;
     csp_packet_t *packet;
     uint32_t packet_seq = 0;
     uint32_t idle_ms = 0;
     csp_socket_t sock = { .opts = CSP_SO_CONN_LESS };
     csp_socket_t *socket = &sock;
     session->start_ts = csp_get_ms();
-    uint32_t now_ts_ms = session->start_ts;
+    uint32_t now_ts_ms;
     socket->opts = CSP_SO_CONN_LESS;
 
     if(session->hooks.on_start) {
@@ -253,7 +253,12 @@ dtp_result start_receiving_data(dtp_t *session)
          * around waiting for extra ones arriving. */
         if (packet_seq >= metric.last_packet) {
             dbg_log("Received last packet (%"PRIu32") in transfer, bailing out.", metric.last_packet);
-            result = DTP_OK;
+            if(session->bytes_received == session->payload_size) {
+                result = DTP_OK;
+            } else {
+                /* Session can be resumed  */
+                result = DTP_CANCELLED;
+            }
             break;
         }
     }
@@ -266,7 +271,7 @@ dtp_result start_receiving_data(dtp_t *session)
     uint32_t duration = now_ts_ms - session->start_ts;
     duration = duration?duration:1;
     dbg_log("Received %" PRIu32 " [bytes], last seq: %" PRIu32 ", status: %d", session->bytes_received, packet_seq, result);
-    dbg_log("Session duration: %" PRIu32 ".%" PRIu32 " [s], avg throughput: %f [KB/s]", (duration/1000),(duration - ((duration/1000)*1000)), (float)((session->bytes_received / duration) * 1000 ) / 1024.0);
+    dbg_log("Session duration: %" PRIu32 ".%" PRIu32 " [s], avg throughput: %f [KB/s]", (duration/1000),(duration - ((duration/1000)*1000)), (float)(((nof_packets * session->request_meta.mtu  -8) / duration) * 1000 ) / 1024.0);
 
     return result;
 }
