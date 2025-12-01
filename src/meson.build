@@ -17,9 +17,9 @@ server_src = [
     'payload_api.c'
 ]
 
-csp_dep = dependency('csp', fallback:['csp', 'csp_dep'])
-param_dep = dependency('param', fallback:['param', 'param_dep'])
-ossi_dep = dependency('ossi', fallback:['ossi', 'ossi_dep'])
+csp_dep = dependency('csp')
+param_dep = dependency('param')
+ossi_dep = dependency('ossi')
 
 lib_deps = [csp_dep, param_dep, ossi_dep]
 
