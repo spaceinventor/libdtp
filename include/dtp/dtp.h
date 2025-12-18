@@ -187,7 +187,7 @@ extern "C"
      * Try to get a handle of one of the pre-allocated sessions
      * @return valid pointer to session object or NULL in case of failure, see csftp_errno()
      */
-    dtp_t *dtp_acquire_session();
+    dtp_t *dtp_acquire_session(void);
 
     dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_throughput, uint8_t timeout, uint8_t payload_id, void *ctx, uint16_t mtu, bool resume, uint32_t keep_alive_interval);
 

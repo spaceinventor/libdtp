@@ -26,7 +26,7 @@ extern void dtp_file_payload_del(uint8_t id);
 /**
  * @brief Print info about registered file payload to stdout
  */
-extern void dtp_file_payload_info();
+extern void dtp_file_payload_info(void);
 
 /**
  * @brief Get info about a specific file payload
