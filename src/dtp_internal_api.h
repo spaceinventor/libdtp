@@ -14,6 +14,8 @@ extern void dtp_set_errno(dtp_t *session, dtp_errno_t errno);
 
 extern uint32_t compute_throughput(uint32_t now, uint32_t last_ts, uint32_t bytes_sent);
 
+int vmem_request_dtp_send_alive(int node);
+
 #ifdef __cplusplus
 }
 #endif
