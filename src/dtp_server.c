@@ -180,7 +180,7 @@ static bool dtp_server_poll_loop(uint32_t op, void *context) {
         csp_sendto(CSP_PRIO_NORM, transfer->ctx->destination, 8 /* DTP DATA PORT */, 0, 0, packet);
         transfer->nof_csp_packets++;
         pkt_cnt++;
-        if ((transfer->ctx->request.keep_alive_interval > 0) && (csp_get_ms() - transfer->ctx->client_alive_ts) > (transfer->ctx->request.keep_alive_interval * 2) + 500 ) {
+        if ((transfer->ctx->request.keep_alive_interval > 0) && (csp_get_ms() - transfer->ctx->client_alive_ts) > (transfer->ctx->request.keep_alive_interval * 2U + 500)) {
             dbg_warn("Client no longer alive, aborting...\n");
             transfer->ctx->keep_running = false;
         }

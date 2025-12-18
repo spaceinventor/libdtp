@@ -183,6 +183,8 @@ static bool create_meta_data(uint32_t idx, uint32_t start, uint32_t end, void *o
     return ret;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
 static void apm_on_deserialize(dtp_t *session, void *ctx) {
     FILE *f = NULL;
     char *filename = dtp_session_get_user_ctx(session);
@@ -252,6 +254,7 @@ static void apm_on_deserialize(dtp_t *session, void *ctx) {
     }
     dbg_log("apm_on_deserialize: done");
 }
+#pragma GCC diagnostic pop
 
 static bool segment_dumper(uint32_t idx, uint32_t start, uint32_t end, void *context) {
     if (end == UINT32_MAX) {

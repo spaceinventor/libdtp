@@ -57,7 +57,7 @@ extern segments_ctx_t *init_segments_ctx(void) {
     return res;
 }
 
-bool update_segments_range(segments_ctx_t *ctx, uint32_t start, uint32_t end) {
+static bool update_segments_range(segments_ctx_t *ctx, uint32_t start, uint32_t end) {
     if (false == ctx->started) {
         /* First received packet, may or may not be the actual first one sent */
         ctx->nof_segments = 0;
@@ -213,27 +213,6 @@ void remove_segment(segments_ctx_t *ctx, uint32_t start, uint32_t end) {
                 free(runner->next);
                 runner->next = runner->next->next;
                 ctx->nof_segments--;
-                break;
-            }
-            runner = runner->next;
-        }
-    }
-}
-
-void remove_segment_el(segments_ctx_t *ctx, segment_t *s) {
-    if (0 != ctx->segments) {
-        segment_t *runner = ctx->segments;
-        if(runner == s) {
-            ctx->segments = runner->next;
-            ctx->nof_segments--;
-            free(s);
-            return;
-        }
-        while (runner->next) {
-            if(runner->next == s) {
-                runner->next = s->next;
-                ctx->nof_segments--;
-                free(s);
                 break;
             }
             runner = runner->next;

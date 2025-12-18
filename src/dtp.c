@@ -6,6 +6,7 @@
 #include "dtp/dtp_session.h"
 #include "dtp/dtp_log.h"
 #include "dtp/dtp.h"
+#include "dtp_internal_api.h"
 
 /**
  * @brief Type for static sessions
@@ -111,7 +112,7 @@ const char *dtp_strerror(dtp_errno_t err)
     return _error_strs[err];
 }
 
-dtp_t *dtp_acquire_session()
+dtp_t *dtp_acquire_session(void)
 {
     for (uint8_t i = 0; i < dtp_nof_static_sessions; i++)
     {

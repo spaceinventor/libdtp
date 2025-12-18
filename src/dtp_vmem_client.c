@@ -8,6 +8,7 @@
 #include "dtp/dtp_vmem_client.h"
 #include "dtp/dtp_vmem_server.h"
 #include "dtp/dtp_session.h"
+#include "dtp_internal_api.h"
 
 int vmem_request_dtp_start_download(dtp_t *session, int node, uint32_t session_id, int timeout, int version, int use_rdp, uint64_t vaddr, uint32_t size)
 {
