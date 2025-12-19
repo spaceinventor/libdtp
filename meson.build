@@ -47,24 +47,27 @@ dtp_client_dep = declare_dependency(include_directories : include, link_with : d
 dtp_server_dep = declare_dependency(include_directories : include, link_with : dtp_server_lib, dependencies: dtp_lib_dep)
 dtp_dep = declare_dependency(include_directories : include, link_with : [dtp_lib, dtp_server_lib, dtp_client_lib], dependencies: [dtp_client_dep, dtp_server_dep])
 
-if not meson.is_subproject()
+if get_option('test')
   subdir('tests')
+endif
+if not meson.is_subproject()
   pkg = import('pkgconfig')
   pkg.generate(
     dtp_lib, 
     version: meson.project_version(),
-    description: 'Data Transfer Protocol over CSP, all libraries'
+    description: 'Data Transfer Protocol over CSP, all libraries',
   )
   pkg.generate(
     dtp_client_lib, 
     version: meson.project_version(),
-    description: 'Data Transfer Protocol over CSP, client libraries'
+    description: 'Data Transfer Protocol over CSP, client libraries',
 
   )
   pkg.generate(
     dtp_server_lib,
     version: meson.project_version(),
-    description: 'Data Transfer Protocol over CSP, server libraries'
+    description: 'Data Transfer Protocol over CSP, server libraries',
+    requires: ['param']
   )
 
 endif
