@@ -1,7 +1,7 @@
 project('dtp', 'c', subproject_dir: 'extern', version: '0.1.0')
 add_project_arguments(['-Wall', '-Wextra', '-Wstrict-prototypes', '-Wmissing-prototypes', '-Wno-unused-parameter'], language: 'c')
 include = include_directories('include')
-install_subdir('include', install_dir : '.')
+install_subdir('include', install_dir : '.', install_tag: 'devel')
 
 subdir('src')
 
