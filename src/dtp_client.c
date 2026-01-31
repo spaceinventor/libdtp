@@ -154,6 +154,8 @@ dtp_result start_receiving_data(dtp_t *session)
     dtp_result result = DTP_CANCELLED;
     csp_packet_t *packet;
     uint32_t packet_seq = 0;
+    /* Keep track of the previous packet sequence number */
+    uint32_t prev_packet_seq = 0xFFFFFFFF;
     uint32_t idle_ms = 0;
     csp_socket_t sock = { .opts = CSP_SO_CONN_LESS };
     csp_socket_t *socket = &sock;
@@ -216,9 +218,20 @@ dtp_result start_receiving_data(dtp_t *session)
         idle_ms = 0;
         now_ts_ms = csp_get_ms();
 
+        packet_seq = packet->data32[0] / (session->request_meta.mtu - (2 * sizeof(uint32_t)));
+        /* It has been observed in certain setups that a packet is received twice consecutively,
+         * which messes up the client state. Detect and discard such duplicates.
+         * This situation was simulated using CSP deduplication disabled and server code randomly sending
+         * the same packet multiple times in a row.
+         */
+        if(packet_seq == prev_packet_seq) {
+            dbg_warn("Received duplicate packet seq: %" PRIu32 "", packet_seq);
+            csp_buffer_free(packet);
+            continue;
+        }
+        prev_packet_seq = packet_seq;
         nof_packets++;
         session->bytes_received += packet->length - (2 * sizeof(uint32_t));
-        packet_seq = packet->data32[0] / (session->request_meta.mtu - (2 * sizeof(uint32_t)));
 
         /* Calculate the current throughput */
         uint32_t bytes_sent = nof_packets * (session->request_meta.mtu - (2 * sizeof(uint32_t)));
