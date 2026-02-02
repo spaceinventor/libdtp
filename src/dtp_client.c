@@ -24,7 +24,7 @@ dtp_t *dtp_prepare_session(uint32_t server, uint32_t session_id, uint32_t max_th
     } else {
         dbg_log("Session created: %p", session);
     }
-
+    session->request_meta.version  = htobe32(DTP_VERSION);
     dtp_session_set_user_ctx(session, ctx);
 
     if (resume) {
