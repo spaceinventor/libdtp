@@ -38,3 +38,4 @@ typedef struct {
 } __attribute__((__packed__)) dtp_vmem_request_t;
 
 extern void dtp_vmem_server_task(void * param);
+int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet);

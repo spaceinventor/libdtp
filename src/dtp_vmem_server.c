@@ -17,10 +17,11 @@ typedef struct dtp_vmem_context_s {
     uint32_t session_id;
     message_queue_t queue;
     uint8_t queue_storage[10 * sizeof(dtp_msg_t)];
-    vmem_handler_obj_t vmem_handler;
 } dtp_vmem_context_t;
 
-static int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet, void *context) {
+static dtp_vmem_context_t dtp_vmem_context;
+
+int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet) {
 
     /* This method gets called when the VMEM server receives a request on its port
     with the request type of 0x80. We need to unpack the DTP meta data and setup
@@ -29,7 +30,7 @@ static int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet, void
 
     dtp_vmem_request_t *vmem_request = (void *)packet->data;
     dtp_msg_t msg;
-    dtp_vmem_context_t *vmem_context = (dtp_vmem_context_t *)context;
+    dtp_vmem_context_t *vmem_context = &dtp_vmem_context;
 
     switch (vmem_request->type) {
         case  DTP_REQUEST_START_TRANSFER:
@@ -133,7 +134,6 @@ static uint32_t async_vmem_read(dtp_async_api_t *me, uint8_t *to_addr, uint64_t 
 
 void dtp_vmem_server_task(void * param) {
 
-    static dtp_vmem_context_t dtp_vmem_context;
     static dtp_async_api_t dtp_api = {
         .recv = async_recv,
         .send = NULL,
@@ -143,9 +143,6 @@ void dtp_vmem_server_task(void * param) {
 
     /* Create the message queue to be used for async task communication */
     message_queue_create(&dtp_vmem_context.queue, sizeof(dtp_msg_t), 10, &dtp_vmem_context.queue_storage[0]);
-
-    /* Hook up the VMEM request type for the DTP server */
-    vmem_server_bind_type(0x80 /* VMEM_SERVER_DTP_REQUEST */, vmem_dtp_request_handler, &dtp_vmem_context.vmem_handler, &dtp_vmem_context);
 
     /* Start the DTP VMEM server main task - it will newer return */
     dtp_vmem_server_main(&dtp_api);
