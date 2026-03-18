@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <string.h>
 
 #include <csp/csp.h>
 #include <csp/arch/csp_time.h>
