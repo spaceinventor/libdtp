@@ -1,6 +1,5 @@
-#include <time.h>
 #include <string.h>
-#include <stdlib.h>
+#include <inttypes.h>
 #include <math.h>
 #include <csp/csp.h>
 #include <dtp/platform.h>
