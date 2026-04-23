@@ -66,7 +66,7 @@ static bool apm_on_data_packet(dtp_t *session, csp_packet_t *packet) {
     uint32_t now = csp_get_ms();
     uint32_t packet_seq = packet->data32[0] / (session->request_meta.mtu - (2 * sizeof(uint32_t)));
 
-    if((now - last_ts) > 150) {
+    if((now - last_ts) > 150 || session->bytes_received == session->payload_size) {
         printf("\33[2K\r");
         printf("%"PRIu32"/%"PRIu32, session->bytes_received, session->payload_size);
         fflush(stdout);
