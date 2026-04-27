@@ -114,7 +114,7 @@ int dtp_client_main(uint32_t server, uint32_t max_throughput, uint8_t timeout, u
     res = dtp_start_transfer(session);
 
 get_out_please:
-    if ((DTP_OK == res || DTP_CANCELLED ) && 0 != out_session) {
+    if ((DTP_OK == res || DTP_CANCELLED == res) && 0 != out_session) {
         /* Give session responsibility to caller, they wants it */
         *out_session = session;
     } else {
@@ -284,7 +284,7 @@ dtp_result start_receiving_data(dtp_t *session)
     uint32_t duration = now_ts_ms - session->start_ts;
     duration = duration?duration:1;
     dbg_log("Received %" PRIu32 " [bytes], last seq: %" PRIu32 ", status: %d", session->bytes_received, packet_seq, result);
-    dbg_log("Session duration: %" PRIu32 ".%" PRIu32 " [s], avg throughput: %f [KB/s]", (duration/1000),(duration - ((duration/1000)*1000)), (float)(((nof_packets * session->request_meta.mtu  -8) / duration) * 1000 ) / 1024.0);
+    dbg_log("Session duration: %" PRIu32 ".%" PRIu32 " [s], avg throughput: %f [KB/s]", (duration/1000),(duration - ((duration/1000)*1000)), (((float)(nof_packets * session->request_meta.mtu  -8) / duration) * 1000 ) / 1024.0);
 
     return result;
 }
