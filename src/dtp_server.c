@@ -178,7 +178,7 @@ static bool dtp_server_poll_loop(uint32_t op, void *context) {
 
         // TODO: The priority parameter might need to be adjusted according to payload meta-data, though it may not have any impact
         // on actual speed transfer at all.
-        csp_sendto(CSP_PRIO_NORM, transfer->ctx->destination, 8 /* DTP DATA PORT */, 0, 0, packet);
+        csp_sendto(CSP_PRIO_LOW, transfer->ctx->destination, 8 /* DTP DATA PORT */, 0, 0, packet);
         transfer->nof_csp_packets++;
         pkt_cnt++;
         if ((transfer->ctx->request.keep_alive_interval > 0) && (csp_get_ms() - transfer->ctx->client_alive_ts) > (transfer->ctx->request.keep_alive_interval * 2U + 500)) {

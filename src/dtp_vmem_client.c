@@ -17,7 +17,7 @@ int vmem_request_dtp_start_download(dtp_t *session, int node, uint32_t session_i
     if (use_rdp) {
         opts |= CSP_O_RDP;
     }
-    csp_conn_t * conn = csp_connect(CSP_PRIO_HIGH, node, VMEM_PORT_SERVER, timeout, opts);
+    csp_conn_t * conn = csp_connect(CSP_PRIO_NORM, node, VMEM_PORT_SERVER, timeout, opts);
     if (conn == NULL) {
         return -1;
     }
@@ -72,7 +72,7 @@ int vmem_request_dtp_stop_download(int node, uint32_t session_id, int timeout, i
     if (use_rdp) {
         opts |= CSP_O_RDP;
     }
-    csp_conn_t * conn = csp_connect(CSP_PRIO_HIGH, node, VMEM_PORT_SERVER, timeout, opts);
+    csp_conn_t * conn = csp_connect(CSP_PRIO_NORM, node, VMEM_PORT_SERVER, timeout, opts);
     if (conn == NULL) {
         return -1;
     }
@@ -114,7 +114,7 @@ int vmem_request_dtp_status(int node, int timeout, int version, int use_rdp) {
     if (use_rdp) {
         opts |= CSP_O_RDP;
     }
-    csp_conn_t * conn = csp_connect(CSP_PRIO_HIGH, node, VMEM_PORT_SERVER, timeout, opts);
+    csp_conn_t * conn = csp_connect(CSP_PRIO_NORM, node, VMEM_PORT_SERVER, timeout, opts);
     if (conn == NULL) {
         return -1;
     }
@@ -170,7 +170,7 @@ int vmem_request_dtp_send_alive(int node) {
     /* Establish RDP connection */
     uint32_t opts = CSP_O_CRC32;
     opts |= CSP_O_RDP;
-    csp_conn_t * conn = csp_connect(CSP_PRIO_HIGH, node, VMEM_PORT_SERVER, 100000, opts);
+    csp_conn_t * conn = csp_connect(CSP_PRIO_NORM, node, VMEM_PORT_SERVER, 100000, opts);
     if (conn == NULL) {
         return -1;
     }
