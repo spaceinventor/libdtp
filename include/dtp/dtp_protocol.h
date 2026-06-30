@@ -36,7 +36,8 @@ extern "C"
         interval_t intervals[8]; /** list of start-stop pairs to transfer, number is set by nof_intervals above */
     } dtp_meta_req_t;
     typedef struct {
-        uint16_t destination; /** Destination port */
+        uint16_t srv_node; /** Provider node */
+        uint16_t dest_port; /** Destination port */
         uint32_t size_in_bytes; /** total number of bytes to transfer */
         bool keep_running; /** Flag indicating if the transfer should continue or not */
         dtp_meta_req_t request; /** List of intervals to transfer */

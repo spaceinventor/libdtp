@@ -61,7 +61,8 @@ static int vmem_dtp_request_handler(csp_conn_t *conn, csp_packet_t *packet, void
             }
 
             msg.msg = 0x01; /* DTP_START_VMEM_TRANSFER */
-            msg.node = csp_conn_src(conn);
+            msg.srv_node = packet->id.dst;
+            msg.dest_port = csp_conn_src(conn);
             msg.vaddr = be64toh(request->vaddr);
             msg.size = be32toh(request->size);
 
