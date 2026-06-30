@@ -110,7 +110,7 @@ static void dtp_vmem_server_run(dtp_async_api_t *api)
                 server_transfer_ctx.payload_meta.context = &transfer_obj;
                 server_transfer_ctx.payload_meta.read = dtp_payload_vmem_read;
                 server_transfer_ctx.payload_meta.completed = NULL;
-                server_transfer_ctx.dest_node = msg.dest_node;
+                server_transfer_ctx.srv_node = msg.srv_node;
                 server_transfer_ctx.dest_port = msg.dest_port;
                 server_transfer_ctx.keep_running = true;
                 /* Start the actual transmission of data. This will block until done.
@@ -179,7 +179,8 @@ static bool dtp_server_poll_loop(uint32_t op, void *context) {
 
         // TODO: The priority parameter might need to be adjusted according to payload meta-data, though it may not have any impact
         // on actual speed transfer at all.
-        packet->id.src = transfer->ctx->dest_node;
+        packet->id.src = transfer->ctx->srv_node;
+        // dbg_warn("Setting src to %u\n", packet->id.src);
         csp_sendto(CSP_PRIO_LOW, transfer->ctx->dest_port, 8 /* DTP DATA PORT */, 0, 0, packet);
         transfer->nof_csp_packets++;
         pkt_cnt++;
@@ -263,7 +264,8 @@ csp_packet_t *setup_server_transfer(dtp_server_transfer_ctx_t *ctx, uint16_t dst
 
     memcpy(&(ctx->request), (dtp_meta_req_t *)request->data, sizeof(dtp_meta_req_t));
     ctx->request.keep_alive_interval = be32toh(ctx->request.keep_alive_interval);
-    ctx->dest_node = request->id.src;
+    ctx->srv_node = request->id.dst;
+    dbg_warn("Setting dest_node to %u\n", ctx->srv_node);
     ctx->dest_port = dst;
 
     /* Get the payload information */

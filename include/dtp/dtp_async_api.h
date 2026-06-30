@@ -7,7 +7,7 @@
 
 typedef struct dtp_msg_s {
     uint32_t msg;
-    uint16_t dest_node;
+    uint16_t srv_node;
     uint16_t dest_port;
     uint64_t vaddr;
     uint32_t size;
