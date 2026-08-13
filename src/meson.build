@@ -17,11 +17,26 @@ server_src = [
     'payload_api.c'
 ]
 
+conf_data = configuration_data()
+
+if host_machine.system() == 'linux'
+	subdir('arch/posix')
+	conf_data.set('LIBDTP_POSIX', 1)
+elif host_machine.system() == 'freertos'
+	subdir('arch/freertos')
+	conf_data.set('LIBDTP_FREERTOS', 1)
+else
+	# If other architecture implementations are needed, please
+	# implement the required functionality locally in the
+	# application or submit a pull request to the maintainers.
+endif
+
+configure_file(output : 'libdtp.h', configuration: conf_data, install_dir: 'include/', install_tag: 'devel')
+
 csp_dep = dependency('csp')
 param_dep = dependency('param')
-ossi_dep = dependency('ossi')
 
-lib_deps = [csp_dep, param_dep, ossi_dep]
+lib_deps = [csp_dep, param_dep]
 
 dtp_lib = library('dtp', lib_src, include_directories: [include, include_directories('.')], dependencies: lib_deps, install: true, implicit_include_directories: false)
 dtp_lib_dep = declare_dependency(include_directories : include, link_with : dtp_lib, dependencies: lib_deps)
