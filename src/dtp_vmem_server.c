@@ -9,7 +9,7 @@
 #include <dtp/dtp_async_api.h>
 #include <dtp/dtp_vmem_server.h>
 #include <dtp/dtp_protocol.h>
-#include <ossi/message_queue.h>
+#include <dtp/message_queue.h>
 
 #include <vmem/vmem.h>
 #include <vmem/vmem_server.h>
