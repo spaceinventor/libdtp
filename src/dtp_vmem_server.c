@@ -128,7 +128,9 @@ static void async_recv(dtp_async_api_t *me, dtp_msg_t *msg) {
 
 static uint32_t async_vmem_read(dtp_async_api_t *me, uint8_t *to_addr, uint64_t from_vaddr, uint32_t size) {
 
-    vmem_read(to_addr, from_vaddr, size);
+    if (vmem_read(to_addr, from_vaddr, size) < 0) {
+        return 0;
+    }
 
     return size;
 }

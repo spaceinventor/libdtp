@@ -74,9 +74,7 @@ static uint32_t dtp_payload_vmem_read(uint8_t payload_id, uint32_t offset, void 
 
     dtp_payload_vmem_transfer_t *txfr = (dtp_payload_vmem_transfer_t *)context;
 
-    (*txfr->api->read)(txfr->api, output, txfr->msg->vaddr + offset, size);
-
-    return size;
+    return (*txfr->api->read)(txfr->api, output, txfr->msg->vaddr + offset, size);
 } 
 
 static void dtp_vmem_server_run(dtp_async_api_t *api)
